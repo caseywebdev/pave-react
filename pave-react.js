@@ -33,11 +33,16 @@ var Component = exports.Component = function (_ReactComponent) {
 
     return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(Component)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this), _this.runPaths = function () {
       if (!_this.getPaths) return;
+
       var paths = _this.getPaths();
       var state = {};
       for (var key in paths) {
         state[key] = _this.store.get(paths[key]);
-      }_this.setState(state);
+      }var pathsKey = (0, _pave.toKey)(state);
+      if (pathsKey === _this.prevPathsKey) return;
+
+      _this.prevPathsKey = pathsKey;
+      _this.setState(state);
     }, _temp), _possibleConstructorReturn(_this, _ret);
   }
 
@@ -51,6 +56,7 @@ var Component = exports.Component = function (_ReactComponent) {
   }, {
     key: 'componentDidUpdate',
     value: function componentDidUpdate() {
+      this.runPaths();
       this.runQuery();
     }
   }, {
@@ -69,18 +75,36 @@ var Component = exports.Component = function (_ReactComponent) {
       var force = _ref$force === undefined ? false : _ref$force;
 
       if (!this.getQuery || this.isLoading) return;
+
       var query = this.getQuery();
       var queryKey = (0, _pave.toKey)(query);
-      if (!force && this.prevQueryKey === queryKey) return;
+      if (!force && queryKey === this.prevQueryKey) return;
+
       this.prevQueryKey = queryKey;
-      this.setState({ isLoading: this.isLoading = true });
+      var state = { isLoading: true, error: null };
+
+      var setState = function setState() {
+        var _ref2 = _this2.state || {};
+
+        var isLoading = _ref2.isLoading;
+        var error = _ref2.error;
+
+        if (state.isLoading !== isLoading || state.error !== error) {
+          _this2.setState(state);
+        }
+      };
+
+      var done = function done(error) {
+        _this2.runPaths();
+        state = { isLoading: _this2.isLoading = false, error: error };
+        setState();
+      };
+
       this.store.run({ force: force, query: query }).then(function () {
-        return _this2.setState({ error: null });
-      }).catch(function (error) {
-        return _this2.setState({ error: error });
-      }).then(function () {
-        return _this2.setState({ isLoading: _this2.isLoading = false });
-      });
+        return done(null);
+      }, done);
+
+      setState();
     }
   }]);
 
