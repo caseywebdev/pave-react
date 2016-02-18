@@ -2,42 +2,42 @@ import {Component as ReactComponent} from 'react';
 import {toKey} from 'pave';
 
 export class Component extends ReactComponent {
+  state = {};
+
   componentWillMount() {
-    this.store.on('change', this.runPaths);
-    this.runPaths();
-    this.runQuery();
+    this.store.on('change', this.updatePaveState);
+    this.updatePaveState();
+    this.runPaveQuery();
   }
 
   componentDidUpdate() {
-    this.runPaths();
-    this.runQuery();
+    this.updatePaveState();
+    this.runPaveQuery();
   }
 
   componentWillUnmount() {
-    this.store.off('change', this.runPaths);
+    this.store.off('change', this.updatePaveState);
   }
 
-  runPaths = () => {
-    if (!this.getPaths) return;
+  updatePaveState = () => {
+    if (!this.getPaveState) return;
 
-    const paths = this.getPaths();
-    const state = {};
-    for (let key in paths) state[key] = this.store.get(paths[key]);
-    const pathsKey = toKey(state);
-    if (pathsKey === this.prevPathsKey) return;
+    const state = this.getPaveState();
+    const stateKey = toKey(state);
+    if (stateKey === this.prevPaveStateKey) return;
 
-    this.prevPathsKey = pathsKey;
+    this.prevPaveStateKey = stateKey;
     this.setState(state);
   }
 
-  runQuery({force = false} = {}) {
-    if (!this.getQuery || this.isLoading) return;
+  runPaveQuery({force = false} = {}) {
+    if (!this.getPaveQuery || this.isLoading) return;
 
-    const query = this.getQuery();
+    const query = this.getPaveQuery();
     const queryKey = toKey(query);
-    if (!force && queryKey === this.prevQueryKey) return;
+    if (!force && queryKey === this.prevPaveQueryKey) return;
 
-    this.prevQueryKey = queryKey;
+    this.prevPaveQueryKey = queryKey;
     let state = {isLoading: true, error: null};
 
     const setState = () => {
@@ -48,7 +48,7 @@ export class Component extends ReactComponent {
     };
 
     const done = error => {
-      this.runPaths();
+      this.updatePaveState();
       state = {isLoading: this.isLoading = false, error};
       setState();
     };

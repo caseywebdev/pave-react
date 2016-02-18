@@ -31,17 +31,14 @@ var Component = exports.Component = function (_ReactComponent) {
       args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(Component)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this), _this.runPaths = function () {
-      if (!_this.getPaths) return;
+    return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(Component)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this), _this.state = {}, _this.updatePaveState = function () {
+      if (!_this.getPaveState) return;
 
-      var paths = _this.getPaths();
-      var state = {};
-      for (var key in paths) {
-        state[key] = _this.store.get(paths[key]);
-      }var pathsKey = (0, _pave.toKey)(state);
-      if (pathsKey === _this.prevPathsKey) return;
+      var state = _this.getPaveState();
+      var stateKey = (0, _pave.toKey)(state);
+      if (stateKey === _this.prevPaveStateKey) return;
 
-      _this.prevPathsKey = pathsKey;
+      _this.prevPaveStateKey = stateKey;
       _this.setState(state);
     }, _temp), _possibleConstructorReturn(_this, _ret);
   }
@@ -49,24 +46,24 @@ var Component = exports.Component = function (_ReactComponent) {
   _createClass(Component, [{
     key: 'componentWillMount',
     value: function componentWillMount() {
-      this.store.on('change', this.runPaths);
-      this.runPaths();
-      this.runQuery();
+      this.store.on('change', this.updatePaveState);
+      this.updatePaveState();
+      this.runPaveQuery();
     }
   }, {
     key: 'componentDidUpdate',
     value: function componentDidUpdate() {
-      this.runPaths();
-      this.runQuery();
+      this.updatePaveState();
+      this.runPaveQuery();
     }
   }, {
     key: 'componentWillUnmount',
     value: function componentWillUnmount() {
-      this.store.off('change', this.runPaths);
+      this.store.off('change', this.updatePaveState);
     }
   }, {
-    key: 'runQuery',
-    value: function runQuery() {
+    key: 'runPaveQuery',
+    value: function runPaveQuery() {
       var _this2 = this;
 
       var _ref = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
@@ -74,13 +71,13 @@ var Component = exports.Component = function (_ReactComponent) {
       var _ref$force = _ref.force;
       var force = _ref$force === undefined ? false : _ref$force;
 
-      if (!this.getQuery || this.isLoading) return;
+      if (!this.getPaveQuery || this.isLoading) return;
 
-      var query = this.getQuery();
+      var query = this.getPaveQuery();
       var queryKey = (0, _pave.toKey)(query);
-      if (!force && queryKey === this.prevQueryKey) return;
+      if (!force && queryKey === this.prevPaveQueryKey) return;
 
-      this.prevQueryKey = queryKey;
+      this.prevPaveQueryKey = queryKey;
       var state = { isLoading: true, error: null };
 
       var setState = function setState() {
@@ -95,7 +92,7 @@ var Component = exports.Component = function (_ReactComponent) {
       };
 
       var done = function done(error) {
-        _this2.runPaths();
+        _this2.updatePaveState();
         state = { isLoading: _this2.isLoading = false, error: error };
         setState();
       };
