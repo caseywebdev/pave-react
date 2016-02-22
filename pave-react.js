@@ -31,39 +31,43 @@ var Component = exports.Component = function (_ReactComponent) {
       args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(Component)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this), _this.state = {}, _this.updatePaveState = function () {
-      if (!_this.getPaveState) return;
-
-      var state = _this.getPaveState();
-      var stateKey = (0, _pave.toKey)(state);
-      if (stateKey === _this.prevPaveStateKey) return;
-
-      _this.prevPaveStateKey = stateKey;
-      _this.setState(state);
+    return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(Component)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this), _this.state = {}, _this.updatePave = function () {
+      _this.updatePaveState();
+      _this.updatePaveQuery();
     }, _temp), _possibleConstructorReturn(_this, _ret);
   }
 
   _createClass(Component, [{
     key: 'componentWillMount',
     value: function componentWillMount() {
-      this.store.on('change', this.updatePaveState);
-      this.updatePaveState();
-      this.runPaveQuery();
+      this.store.on('change', this.updatePave);
+      this.updatePave();
     }
   }, {
     key: 'componentDidUpdate',
     value: function componentDidUpdate() {
-      this.updatePaveState();
-      this.runPaveQuery();
+      this.updatePave();
     }
   }, {
     key: 'componentWillUnmount',
     value: function componentWillUnmount() {
-      this.store.off('change', this.updatePaveState);
+      this.store.off('change', this.updatePave);
     }
   }, {
-    key: 'runPaveQuery',
-    value: function runPaveQuery() {
+    key: 'updatePaveState',
+    value: function updatePaveState() {
+      if (!this.getPaveState) return;
+
+      var state = this.getPaveState();
+      var stateKey = (0, _pave.toKey)(state);
+      if (stateKey === this.prevPaveStateKey) return;
+
+      this.prevPaveStateKey = stateKey;
+      this.setState(state);
+    }
+  }, {
+    key: 'updatePaveQuery',
+    value: function updatePaveQuery() {
       var _this2 = this;
 
       var _ref = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
@@ -71,37 +75,29 @@ var Component = exports.Component = function (_ReactComponent) {
       var _ref$force = _ref.force;
       var force = _ref$force === undefined ? false : _ref$force;
 
-      if (!this.getPaveQuery || this.isLoading) return;
+      if (!this.getPaveQuery) return;
+
+      if (this.isLoading) return this.pendingPaveQuery = true;
+      this.pendingPaveQuery = false;
 
       var query = this.getPaveQuery();
       var queryKey = (0, _pave.toKey)(query);
       if (!force && queryKey === this.prevPaveQueryKey) return;
 
       this.prevPaveQueryKey = queryKey;
-      var state = { isLoading: true, error: null };
-
-      var setState = function setState() {
-        var _ref2 = _this2.state || {};
-
-        var isLoading = _ref2.isLoading;
-        var error = _ref2.error;
-
-        if (state.isLoading !== isLoading || state.error !== error) {
-          _this2.setState(state);
-        }
-      };
-
+      var isDone = false;
       var done = function done(error) {
+        isDone = true;
+        _this2.setState({ isLoading: _this2.isLoading = false, error: error });
         _this2.updatePaveState();
-        state = { isLoading: _this2.isLoading = false, error: error };
-        setState();
+        if (_this2.pendingPaveQuery) _this2.updatePaveQuery();
       };
 
       this.store.run({ force: force, query: query }).then(function () {
         return done(null);
       }, done);
 
-      setState();
+      if (!isDone) this.setState({ isLoading: true, error: null });
     }
   }]);
 

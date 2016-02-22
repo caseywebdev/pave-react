@@ -5,21 +5,19 @@ export class Component extends ReactComponent {
   state = {};
 
   componentWillMount() {
-    this.store.on('change', this.updatePaveState);
-    this.updatePaveState();
-    this.runPaveQuery();
+    this.store.on('change', this.updatePave);
+    this.updatePave();
   }
 
   componentDidUpdate() {
-    this.updatePaveState();
-    this.runPaveQuery();
+    this.updatePave();
   }
 
   componentWillUnmount() {
-    this.store.off('change', this.updatePaveState);
+    this.store.off('change', this.updatePave);
   }
 
-  updatePaveState = () => {
+  updatePaveState() {
     if (!this.getPaveState) return;
 
     const state = this.getPaveState();
@@ -30,31 +28,32 @@ export class Component extends ReactComponent {
     this.setState(state);
   }
 
-  runPaveQuery({force = false} = {}) {
-    if (!this.getPaveQuery || this.isLoading) return;
+  updatePaveQuery({force = false} = {}) {
+    if (!this.getPaveQuery) return;
+
+    if (this.isLoading) return this.pendingPaveQuery = true;
+    this.pendingPaveQuery = false;
 
     const query = this.getPaveQuery();
     const queryKey = toKey(query);
     if (!force && queryKey === this.prevPaveQueryKey) return;
 
     this.prevPaveQueryKey = queryKey;
-    let state = {isLoading: true, error: null};
-
-    const setState = () => {
-      const {isLoading, error} = this.state || {};
-      if (state.isLoading !== isLoading || state.error !== error) {
-        this.setState(state);
-      }
-    };
-
+    let isDone = false;
     const done = error => {
+      isDone = true;
+      this.setState({isLoading: this.isLoading = false, error});
       this.updatePaveState();
-      state = {isLoading: this.isLoading = false, error};
-      setState();
+      if (this.pendingPaveQuery) this.updatePaveQuery();
     };
 
     this.store.run({force, query}).then(() => done(null), done);
 
-    setState();
+    if (!isDone) this.setState({isLoading: true, error: null});
+  }
+
+  updatePave = () => {
+    this.updatePaveState();
+    this.updatePaveQuery();
   }
 }
