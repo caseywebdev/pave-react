@@ -31,20 +31,24 @@ export class Component extends ReactComponent {
   updatePaveQuery({force = false} = {}) {
     if (!this.getPaveQuery) return;
 
-    if (this.isLoading) return this.pendingPaveQuery = true;
-    this.pendingPaveQuery = false;
+    if (this.isLoading) return this.pendingUpdatePaveQuery = true;
 
     const query = this.getPaveQuery();
     const queryKey = toKey(query);
     if (!force && queryKey === this.prevPaveQueryKey) return;
 
-    this.prevPaveQueryKey = queryKey;
     let isDone = false;
+    this.isLoading = true;
+    this.prevPaveQueryKey = queryKey;
     const done = error => {
       isDone = true;
-      this.setState({isLoading: this.isLoading = false, error});
+      this.isLoading = false;
+      this.setState({isLoading: false, error});
       this.updatePaveState();
-      if (this.pendingPaveQuery) this.updatePaveQuery();
+      if (this.pendingUpdatePaveQuery) {
+        this.pendingUpdatePaveQuery = false;
+        this.updatePaveQuery();
+      }
     };
 
     this.store.run({force, query}).then(() => done(null), done);

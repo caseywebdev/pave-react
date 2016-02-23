@@ -77,20 +77,24 @@ var Component = exports.Component = function (_ReactComponent) {
 
       if (!this.getPaveQuery) return;
 
-      if (this.isLoading) return this.pendingPaveQuery = true;
-      this.pendingPaveQuery = false;
+      if (this.isLoading) return this.pendingUpdatePaveQuery = true;
 
       var query = this.getPaveQuery();
       var queryKey = (0, _pave.toKey)(query);
       if (!force && queryKey === this.prevPaveQueryKey) return;
 
-      this.prevPaveQueryKey = queryKey;
       var isDone = false;
+      this.isLoading = true;
+      this.prevPaveQueryKey = queryKey;
       var done = function done(error) {
         isDone = true;
-        _this2.setState({ isLoading: _this2.isLoading = false, error: error });
+        _this2.isLoading = false;
+        _this2.setState({ isLoading: false, error: error });
         _this2.updatePaveState();
-        if (_this2.pendingPaveQuery) _this2.updatePaveQuery();
+        if (_this2.pendingUpdatePaveQuery) {
+          _this2.pendingUpdatePaveQuery = false;
+          _this2.updatePaveQuery();
+        }
       };
 
       this.store.run({ force: force, query: query }).then(function () {
