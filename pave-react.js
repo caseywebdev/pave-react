@@ -83,13 +83,21 @@ var Component = exports.Component = function (_ReactComponent) {
       var queryKey = (0, _pave.toKey)(query);
       if (!force && queryKey === this.prevPaveQueryKey) return;
 
-      var isDone = false;
       this.isLoading = true;
       this.prevPaveQueryKey = queryKey;
+
+      var state = { isLoading: true, error: null };
+      var setState = function setState() {
+        var stateKey = (0, _pave.toKey)(state);
+        if (stateKey === _this2.prevPaveQueryStateKey) return;
+
+        _this2.prevPaveQueryStateKey = stateKey;
+        _this2.setState(state);
+      };
+
       var done = function done(error) {
-        isDone = true;
-        _this2.isLoading = false;
-        _this2.setState({ isLoading: false, error: error });
+        state = { isLoading: _this2.isLoading = false, error: error };
+        setState();
         _this2.updatePaveState();
         if (_this2.pendingUpdatePaveQuery) {
           _this2.pendingUpdatePaveQuery = false;
@@ -101,7 +109,7 @@ var Component = exports.Component = function (_ReactComponent) {
         return done(null);
       }, done);
 
-      if (!isDone) this.setState({ isLoading: true, error: null });
+      setState();
     }
   }]);
 
