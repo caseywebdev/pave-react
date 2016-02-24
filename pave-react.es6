@@ -2,7 +2,7 @@ import {Component as ReactComponent} from 'react';
 import {toKey} from 'pave';
 
 export class Component extends ReactComponent {
-  state = {};
+  paveState = {};
 
   componentWillMount() {
     this.store.on('change', this.updatePave);
@@ -18,54 +18,49 @@ export class Component extends ReactComponent {
   }
 
   updatePaveState() {
-    if (!this.getPaveState) return;
-
-    const state = this.getPaveState();
-    const stateKey = toKey(state);
-    if (stateKey === this.prevPaveStateKey) return;
-
-    this.prevPaveStateKey = stateKey;
-    this.setState(state);
+    if (this.getPaveState) this.setPaveState(this.getPaveState());
   }
 
-  updatePaveQuery({force = false} = {}) {
-    if (!this.getPaveQuery) return;
+  updatePaveQuery() {
+    if (!this.getPaveQuery) return this.applyPaveState();
 
-    if (this.isLoading) return this.pendingUpdatePaveQuery = true;
+    if (this.paveState.isLoading) return this.pendingUpdatePaveQuery = true;
 
     const query = this.getPaveQuery();
     const queryKey = toKey(query);
-    if (!force && queryKey === this.prevPaveQueryKey) return;
+    if (queryKey === this.prevPaveQueryKey) return this.applyPaveState();
 
-    this.isLoading = true;
     this.prevPaveQueryKey = queryKey;
-
-    let state = {isLoading: true, error: null};
-    const setState = () => {
-      const stateKey = toKey(state);
-      if (stateKey === this.prevPaveQueryStateKey) return;
-
-      this.prevPaveQueryStateKey = stateKey;
-      this.setState(state);
-    };
+    this.setPaveState({isLoading: true, error: null});
 
     const done = error => {
-      state = {isLoading: this.isLoading = false, error};
-      setState();
+      this.setPaveState({isLoading: false, error});
       this.updatePaveState();
-      if (this.pendingUpdatePaveQuery) {
-        this.pendingUpdatePaveQuery = false;
-        this.updatePaveQuery();
-      }
+      if (!this.pendingUpdatePaveQuery) return this.applyPaveState();
+
+      this.pendingUpdatePaveQuery = false;
+      this.updatePaveQuery();
     };
 
-    this.store.run({force, query}).then(() => done(null), done);
+    this.store.run({query}).then(() => done(null), done);
 
-    setState();
+    this.applyPaveState();
   }
 
   updatePave = () => {
     this.updatePaveState();
     this.updatePaveQuery();
+  }
+
+  setPaveState(state) {
+    for (let key in state) this.paveState[key] = state[key];
+  }
+
+  applyPaveState() {
+    const stateKey = toKey(this.paveState);
+    if (stateKey === this.prevPaveStateKey) return;
+
+    this.prevPaveStateKey = stateKey;
+    this.setState(this.paveState);
   }
 }
