@@ -34,9 +34,11 @@ const updatePaveQuery = (c, options = {}, deferred = new Deferred()) => {
       setPaveState(c, {isLoading: false});
       updatePaveState(c);
       const next = c.paveQueue.shift();
-      if (!next) return applyPaveState(c);
-      updatePaveQuery(c, next.options, next.deferred);
+      if (next) return updatePaveQuery(c, next.options, next.deferred);
+
+      applyPaveState(c);
     });
+
     applyPaveState(c);
     run.then(deferred.resolve, deferred.reject);
   }
