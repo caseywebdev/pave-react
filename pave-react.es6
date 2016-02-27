@@ -1,8 +1,61 @@
 import {Component as ReactComponent} from 'react';
-import {toKey} from 'pave';
+import {SyncPromise, toKey} from 'pave';
+
+const setPaveState = (c, state) => {
+  for (let key in state) c.paveState[key] = state[key];
+};
+
+const applyPaveState = c => {
+  const stateKey = toKey(c.paveState);
+  if (stateKey === c.prevPaveStateKey) return;
+
+  c.prevPaveStateKey = stateKey;
+  c.setState(c.paveState);
+};
+
+const updatePaveState = c => {
+  if (c.getPaveState) setPaveState(c, c.getPaveState());
+};
+
+const updatePaveQuery = (c, options = {}, deferred = new Deferred()) => {
+  if (!options.query && c.getPaveQuery) {
+    options = {...options, query: c.getPaveQuery()};
+  }
+
+  if (!options.query) {
+    applyPaveState(c);
+    deferred.resolve();
+  } else if (c.paveState.isLoading) {
+    c.paveQueue.push({options, deferred});
+  } else {
+    setPaveState(c, {isLoading: true, error: null});
+    const run = c.store.run(options);
+    run.catch(error => setPaveState(c, {error})).then(() => {
+      setPaveState(c, {isLoading: false});
+      updatePaveState(c);
+      const next = c.paveQueue.shift();
+      if (!next) return applyPaveState(c);
+      updatePaveQuery(c, next.options, next.deferred);
+    });
+    applyPaveState(c);
+    run.then(deferred.resolve, deferred.reject);
+  }
+
+  return deferred.promise;
+};
+
+class Deferred {
+  constructor() {
+    this.promise = new SyncPromise((resolve, reject) => {
+      this.resolve = resolve;
+      this.reject = reject;
+    });
+  }
+}
 
 export class Component extends ReactComponent {
   paveState = {};
+  paveQueue = [];
 
   componentWillMount() {
     this.store.on('change', this.updatePave);
@@ -17,50 +70,8 @@ export class Component extends ReactComponent {
     this.store.off('change', this.updatePave);
   }
 
-  updatePaveState() {
-    if (this.getPaveState) this.setPaveState(this.getPaveState());
-  }
-
-  updatePaveQuery() {
-    if (!this.getPaveQuery) return this.applyPaveState();
-
-    if (this.paveState.isLoading) return this.pendingUpdatePaveQuery = true;
-
-    const query = this.getPaveQuery();
-    const queryKey = toKey(query);
-    if (queryKey === this.prevPaveQueryKey) return this.applyPaveState();
-
-    this.prevPaveQueryKey = queryKey;
-    this.setPaveState({isLoading: true, error: null});
-
-    const done = error => {
-      this.setPaveState({isLoading: false, error});
-      this.updatePaveState();
-      if (!this.pendingUpdatePaveQuery) return this.applyPaveState();
-
-      this.pendingUpdatePaveQuery = false;
-      this.updatePaveQuery();
-    };
-
-    this.store.run({query}).then(() => done(null), done);
-
-    this.applyPaveState();
-  }
-
-  updatePave = () => {
-    this.updatePaveState();
-    this.updatePaveQuery();
-  }
-
-  setPaveState(state) {
-    for (let key in state) this.paveState[key] = state[key];
-  }
-
-  applyPaveState() {
-    const stateKey = toKey(this.paveState);
-    if (stateKey === this.prevPaveStateKey) return;
-
-    this.prevPaveStateKey = stateKey;
-    this.setState(this.paveState);
+  updatePave = options => {
+    updatePaveState(this);
+    return updatePaveQuery(this, options);
   }
 }
