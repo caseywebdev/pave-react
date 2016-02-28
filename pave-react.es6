@@ -10,7 +10,7 @@ const applyPaveState = c => {
   if (stateKey === c.prevPaveStateKey) return;
 
   c.prevPaveStateKey = stateKey;
-  c.setState(c.paveState);
+  if (c._reactInternalInstance) c.setState(c.paveState);
 };
 
 const updatePaveState = (c, options = {}) => {
