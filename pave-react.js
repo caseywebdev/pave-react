@@ -30,42 +30,76 @@ var applyPaveState = function applyPaveState(c) {
   if (stateKey === c.prevPaveStateKey) return;
 
   c.prevPaveStateKey = stateKey;
-  c.setState(c.paveState);
+  if (c._reactInternalInstance) c.setState(c.paveState);
 };
 
 var updatePaveState = function updatePaveState(c) {
-  if (c.getPaveState) setPaveState(c, c.getPaveState());
+  var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+  if (!c.getPaveState) return;
+  var _options$props = options.props;
+  var props = _options$props === undefined ? c.props : _options$props;
+  var _options$context = options.context;
+  var context = _options$context === undefined ? c.context : _options$context;
+
+  setPaveState(c, c.getPaveState(props, context));
+};
+
+var shiftQueue = function shiftQueue(c) {
+  var next = c.paveQueue.shift();
+  if (next) return updatePaveQuery(c, next.options, next.deferred);
+  applyPaveState(c);
 };
 
 var updatePaveQuery = function updatePaveQuery(c) {
   var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
   var deferred = arguments.length <= 2 || arguments[2] === undefined ? new Deferred() : arguments[2];
 
-  if (!options.query && c.getPaveQuery) {
-    options = _extends({}, options, { query: c.getPaveQuery() });
-  }
-
-  if (!options.query) {
-    applyPaveState(c);
-    deferred.resolve();
-  } else if (c.paveState.isLoading) {
+  if (c.paveState.isLoading) {
     c.paveQueue.push({ options: options, deferred: deferred });
-  } else {
-    setPaveState(c, { isLoading: true, error: null });
-    var run = c.store.run(options);
-    run.catch(function (error) {
-      return setPaveState(c, { error: error });
-    }).then(function () {
-      setPaveState(c, { isLoading: false });
-      updatePaveState(c);
-      var next = c.paveQueue.shift();
-      if (!next) return applyPaveState(c);
-      updatePaveQuery(c, next.options, next.deferred);
-    });
     applyPaveState(c);
-    run.then(deferred.resolve, deferred.reject);
+    return deferred.promise;
   }
 
+  var _options$runOptions = options.runOptions;
+  var runOptions = _options$runOptions === undefined ? {} : _options$runOptions;
+  var _options$props2 = options.props;
+  var props = _options$props2 === undefined ? c.props : _options$props2;
+  var _options$context2 = options.context;
+  var context = _options$context2 === undefined ? c.context : _options$context2;
+
+  if (!runOptions.query && c.getPaveQuery) {
+    runOptions = _extends({}, runOptions, { query: c.getPaveQuery(props, context) });
+  }
+
+  if (!runOptions.query) {
+    deferred.resolve();
+    shiftQueue(c);
+    return deferred.promise;
+  }
+
+  var key = (0, _pave.toKey)(runOptions);
+  if (!runOptions.force && c.paveKey === key) {
+    var error = c.paveState.error;
+
+    if (error) deferred.reject(error);else deferred.resolve();
+    shiftQueue(c);
+    return deferred.promise;
+  }
+
+  setPaveState(c, { isLoading: true, error: null });
+  c.store.run(runOptions).catch(function (error) {
+    return setPaveState(c, { error: error });
+  }).then(function () {
+    c.paveKey = key;
+    setPaveState(c, { isLoading: false });
+    updatePaveState(c);
+    var error = c.paveState.error;
+
+    if (error) deferred.reject(error);else deferred.resolve();
+    shiftQueue(c);
+  });
+  applyPaveState(c);
   return deferred.promise;
 };
 
@@ -94,8 +128,9 @@ var Component = exports.Component = function (_ReactComponent) {
       args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this2 = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(Component)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this2), _this2.paveState = {}, _this2.paveQueue = [], _this2.updatePave = function (options) {
-      updatePaveState(_this2);
+    return _ret = (_temp = (_this2 = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(Component)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this2), _this2.paveState = {}, _this2.paveQueue = [], _this2.updatePave = function (runOptions, options) {
+      updatePaveState(_this2, options);
+      if (runOptions) options = _extends({ runOptions: runOptions }, options);
       return updatePaveQuery(_this2, options);
     }, _temp), _possibleConstructorReturn(_this2, _ret);
   }
@@ -105,6 +140,11 @@ var Component = exports.Component = function (_ReactComponent) {
     value: function componentWillMount() {
       this.store.on('change', this.updatePave);
       this.updatePave();
+    }
+  }, {
+    key: 'componentWillReceiveProps',
+    value: function componentWillReceiveProps(props, context) {
+      this.updatePave(null, { props: props, context: context });
     }
   }, {
     key: 'componentDidUpdate',
