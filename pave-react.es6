@@ -28,6 +28,7 @@ const shiftQueue = c => {
 const updatePaveQuery = (c, options = {}, deferred = new Deferred()) => {
   if (c.paveState.isLoading) {
     c.paveQueue.push({options, deferred});
+    applyPaveState(c);
     return deferred.promise;
   }
 
