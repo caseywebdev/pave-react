@@ -1,6 +1,6 @@
 {
   "name": "pave-react",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "author": "Casey Foster <c@sey.me>",
   "license": "MIT",
   "main": "pave-react.js",
@@ -17,6 +17,6 @@
   },
   "peerDependencies": {
     "pave": "0.0",
-    "react": "0.14"
+    "react": "0.14 || >= 15.0.0-rc.1"
   }
 }
