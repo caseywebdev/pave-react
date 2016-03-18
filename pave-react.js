@@ -7,8 +7,6 @@ exports.Component = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
 var _react = require('react');
 
 var _pave = require('pave');
@@ -37,6 +35,7 @@ var updatePaveState = function updatePaveState(c) {
   var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
   if (!c.getPaveState) return;
+
   var _options$props = options.props;
   var props = _options$props === undefined ? c.props : _options$props;
   var _options$context = options.context;
@@ -48,6 +47,7 @@ var updatePaveState = function updatePaveState(c) {
 var shiftQueue = function shiftQueue(c) {
   var next = c.paveQueue.shift();
   if (next) return updatePaveQuery(c, next.options, next.deferred);
+
   applyPaveState(c);
 };
 
@@ -61,25 +61,22 @@ var updatePaveQuery = function updatePaveQuery(c) {
     return deferred.promise;
   }
 
-  var _options$runOptions = options.runOptions;
-  var runOptions = _options$runOptions === undefined ? {} : _options$runOptions;
-  var _options$props2 = options.props;
-  var props = _options$props2 === undefined ? c.props : _options$props2;
   var _options$context2 = options.context;
   var context = _options$context2 === undefined ? c.context : _options$context2;
+  var _options$force = options.force;
+  var force = _options$force === undefined ? false : _options$force;
+  var _options$props2 = options.props;
+  var props = _options$props2 === undefined ? c.props : _options$props2;
 
-  if (!runOptions.query && c.getPaveQuery) {
-    runOptions = _extends({}, runOptions, { query: c.getPaveQuery(props, context) });
-  }
-
-  if (!runOptions.query) {
+  var query = c.getPaveQuery && c.getPaveQuery(props, context);
+  if (!query) {
     deferred.resolve();
     shiftQueue(c);
     return deferred.promise;
   }
 
-  var key = (0, _pave.toKey)(runOptions);
-  if (!runOptions.force && c.paveKey === key) {
+  var key = (0, _pave.toKey)(query);
+  if (!force && c.paveKey === key) {
     var error = c.paveState.error;
 
     if (error) deferred.reject(error);else deferred.resolve();
@@ -88,7 +85,8 @@ var updatePaveQuery = function updatePaveQuery(c) {
   }
 
   setPaveState(c, { isLoading: true, error: null });
-  c.store.run(runOptions).catch(function (error) {
+
+  c.store.run({ query: query, force: force }).catch(function (error) {
     return setPaveState(c, { error: error });
   }).then(function () {
     c.paveKey = key;
@@ -99,8 +97,15 @@ var updatePaveQuery = function updatePaveQuery(c) {
     if (error) deferred.reject(error);else deferred.resolve();
     shiftQueue(c);
   });
+
   applyPaveState(c);
+
   return deferred.promise;
+};
+
+var updatePave = function updatePave(c, options) {
+  updatePaveState(c, options);
+  return updatePaveQuery(c, options);
 };
 
 var Deferred = function Deferred() {
@@ -128,33 +133,36 @@ var Component = exports.Component = function (_ReactComponent) {
       args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this2 = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(Component)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this2), _this2.paveState = {}, _this2.paveQueue = [], _this2.updatePave = function (runOptions, options) {
-      updatePaveState(_this2, options);
-      if (runOptions) options = _extends({ runOptions: runOptions }, options);
-      return updatePaveQuery(_this2, options);
+    return _ret = (_temp = (_this2 = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(Component)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this2), _this2.paveState = {}, _this2.paveQueue = [], _this2._autoUpdatePave = function (options) {
+      return updatePave(_this2, options);
     }, _temp), _possibleConstructorReturn(_this2, _ret);
   }
 
   _createClass(Component, [{
     key: 'componentWillMount',
     value: function componentWillMount() {
-      this.store.on('change', this.updatePave);
-      this.updatePave();
+      this.store.on('change', this._autoUpdatePave);
+      this._autoUpdatePave();
     }
   }, {
     key: 'componentWillReceiveProps',
     value: function componentWillReceiveProps(props, context) {
-      this.updatePave(null, { props: props, context: context });
+      this._autoUpdatePave({ props: props, context: context });
     }
   }, {
     key: 'componentDidUpdate',
     value: function componentDidUpdate() {
-      this.updatePave();
+      this._autoUpdatePave();
     }
   }, {
     key: 'componentWillUnmount',
     value: function componentWillUnmount() {
-      this.store.off('change', this.updatePave);
+      this.store.off('change', this._autoUpdatePave);
+    }
+  }, {
+    key: 'reloadPave',
+    value: function reloadPave() {
+      return updatePave(this, { force: true });
     }
   }]);
 
