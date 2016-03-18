@@ -15,6 +15,7 @@ const applyPaveState = c => {
 
 const updatePaveState = (c, options = {}) => {
   if (!c.getPaveState) return;
+
   const {props = c.props, context = c.context} = options;
   setPaveState(c, c.getPaveState(props, context));
 };
@@ -22,6 +23,7 @@ const updatePaveState = (c, options = {}) => {
 const shiftQueue = c => {
   const next = c.paveQueue.shift();
   if (next) return updatePaveQuery(c, next.options, next.deferred);
+
   applyPaveState(c);
 };
 
@@ -32,19 +34,16 @@ const updatePaveQuery = (c, options = {}, deferred = new Deferred()) => {
     return deferred.promise;
   }
 
-  let {runOptions = {}, props = c.props, context = c.context} = options;
-  if (!runOptions.query && c.getPaveQuery) {
-    runOptions = {...runOptions, query: c.getPaveQuery(props, context)};
-  }
-
-  if (!runOptions.query) {
+  const {context = c.context, force = false, props = c.props} = options;
+  const query = c.getPaveQuery && c.getPaveQuery(props, context);
+  if (!query) {
     deferred.resolve();
     shiftQueue(c);
     return deferred.promise;
   }
 
-  const key = toKey(runOptions);
-  if (!runOptions.force && c.paveKey === key) {
+  const key = toKey(query);
+  if (!force && c.paveKey === key) {
     const {error} = c.paveState;
     if (error) deferred.reject(error); else deferred.resolve();
     shiftQueue(c);
@@ -52,7 +51,8 @@ const updatePaveQuery = (c, options = {}, deferred = new Deferred()) => {
   }
 
   setPaveState(c, {isLoading: true, error: null});
-  c.store.run(runOptions)
+
+  c.store.run({query, force})
     .catch(error => setPaveState(c, {error}))
     .then(() => {
       c.paveKey = key;
@@ -62,8 +62,15 @@ const updatePaveQuery = (c, options = {}, deferred = new Deferred()) => {
       if (error) deferred.reject(error); else deferred.resolve();
       shiftQueue(c);
     });
+
   applyPaveState(c);
+
   return deferred.promise;
+};
+
+const updatePave = (c, options) => {
+  updatePaveState(c, options);
+  return updatePaveQuery(c, options);
 };
 
 class Deferred {
@@ -78,27 +85,26 @@ class Deferred {
 export class Component extends ReactComponent {
   paveState = {};
   paveQueue = [];
+  _autoUpdatePave = options => updatePave(this, options);
 
   componentWillMount() {
-    this.store.on('change', this.updatePave);
-    this.updatePave();
+    this.store.on('change', this._autoUpdatePave);
+    this._autoUpdatePave();
   }
 
   componentWillReceiveProps(props, context) {
-    this.updatePave(null, {props, context});
+    this._autoUpdatePave({props, context});
   }
 
   componentDidUpdate() {
-    this.updatePave();
+    this._autoUpdatePave();
   }
 
   componentWillUnmount() {
-    this.store.off('change', this.updatePave);
+    this.store.off('change', this._autoUpdatePave);
   }
 
-  updatePave = (runOptions, options) => {
-    updatePaveState(this, options);
-    if (runOptions) options = {runOptions, ...options};
-    return updatePaveQuery(this, options);
+  reloadPave() {
+    return updatePave(this, {force: true});
   }
 }
