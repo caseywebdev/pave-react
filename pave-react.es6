@@ -13,6 +13,19 @@ const applyPaveState = c => {
   if (c._reactInternalInstance) c.setState(c.paveState);
 };
 
+const updatePaveWatchQuery = (c, options = {}) => {
+  if (!c.getPaveWatchQuery) return;
+
+  const {props = c.props, context = c.context} = options;
+  const query = c.getPaveWatchQuery(props, context);
+  const key = toKey(query);
+  if (key === c.prevPaveWatchQueryKey) return;
+
+  c.prevPaveWatchQueryKey = key;
+  if (query) c.store.watch(query, c._autoUpdatePave);
+  else c.store.unwatch(c._autoUpdatePave);
+};
+
 const updatePaveState = (c, options = {}) => {
   if (!c.getPaveState) return;
 
@@ -69,6 +82,7 @@ const updatePaveQuery = (c, options = {}, deferred = new Deferred()) => {
 };
 
 const updatePave = (c, options) => {
+  updatePaveWatchQuery(c, options);
   updatePaveState(c, options);
   return updatePaveQuery(c, options);
 };
@@ -85,23 +99,22 @@ class Deferred {
 export class Component extends ReactComponent {
   paveState = {};
   paveQueue = [];
-  _autoUpdatePave = options => updatePave(this, options);
+  _autoUpdatePave = () => updatePave(this);
 
   componentWillMount() {
-    this.store.on('change', this._autoUpdatePave);
-    this._autoUpdatePave();
+    updatePave(this);
   }
 
   componentWillReceiveProps(props, context) {
-    this._autoUpdatePave({props, context});
+    updatePave(this, {props, context});
   }
 
   componentDidUpdate() {
-    this._autoUpdatePave();
+    updatePave(this);
   }
 
   componentWillUnmount() {
-    this.store.off('change', this._autoUpdatePave);
+    this.store.unwatch(this._autoUpdatePave);
   }
 
   reloadPave() {

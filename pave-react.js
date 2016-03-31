@@ -31,15 +31,33 @@ var applyPaveState = function applyPaveState(c) {
   if (c._reactInternalInstance) c.setState(c.paveState);
 };
 
-var updatePaveState = function updatePaveState(c) {
+var updatePaveWatchQuery = function updatePaveWatchQuery(c) {
   var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
-  if (!c.getPaveState) return;
+  if (!c.getPaveWatchQuery) return;
 
   var _options$props = options.props;
   var props = _options$props === undefined ? c.props : _options$props;
   var _options$context = options.context;
   var context = _options$context === undefined ? c.context : _options$context;
+
+  var query = c.getPaveWatchQuery(props, context);
+  var key = (0, _pave.toKey)(query);
+  if (key === c.prevPaveWatchQueryKey) return;
+
+  c.prevPaveWatchQueryKey = key;
+  if (query) c.store.watch(query, c._autoUpdatePave);else c.store.unwatch(c._autoUpdatePave);
+};
+
+var updatePaveState = function updatePaveState(c) {
+  var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+  if (!c.getPaveState) return;
+
+  var _options$props2 = options.props;
+  var props = _options$props2 === undefined ? c.props : _options$props2;
+  var _options$context2 = options.context;
+  var context = _options$context2 === undefined ? c.context : _options$context2;
 
   setPaveState(c, c.getPaveState(props, context));
 };
@@ -61,12 +79,12 @@ var updatePaveQuery = function updatePaveQuery(c) {
     return deferred.promise;
   }
 
-  var _options$context2 = options.context;
-  var context = _options$context2 === undefined ? c.context : _options$context2;
+  var _options$context3 = options.context;
+  var context = _options$context3 === undefined ? c.context : _options$context3;
   var _options$force = options.force;
   var force = _options$force === undefined ? false : _options$force;
-  var _options$props2 = options.props;
-  var props = _options$props2 === undefined ? c.props : _options$props2;
+  var _options$props3 = options.props;
+  var props = _options$props3 === undefined ? c.props : _options$props3;
 
   var query = c.getPaveQuery && c.getPaveQuery(props, context);
   if (!query) {
@@ -104,6 +122,7 @@ var updatePaveQuery = function updatePaveQuery(c) {
 };
 
 var updatePave = function updatePave(c, options) {
+  updatePaveWatchQuery(c, options);
   updatePaveState(c, options);
   return updatePaveQuery(c, options);
 };
@@ -133,31 +152,30 @@ var Component = exports.Component = function (_ReactComponent) {
       args[_key] = arguments[_key];
     }
 
-    return _ret = (_temp = (_this2 = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(Component)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this2), _this2.paveState = {}, _this2.paveQueue = [], _this2._autoUpdatePave = function (options) {
-      return updatePave(_this2, options);
+    return _ret = (_temp = (_this2 = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(Component)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this2), _this2.paveState = {}, _this2.paveQueue = [], _this2._autoUpdatePave = function () {
+      return updatePave(_this2);
     }, _temp), _possibleConstructorReturn(_this2, _ret);
   }
 
   _createClass(Component, [{
     key: 'componentWillMount',
     value: function componentWillMount() {
-      this.store.on('change', this._autoUpdatePave);
-      this._autoUpdatePave();
+      updatePave(this);
     }
   }, {
     key: 'componentWillReceiveProps',
     value: function componentWillReceiveProps(props, context) {
-      this._autoUpdatePave({ props: props, context: context });
+      updatePave(this, { props: props, context: context });
     }
   }, {
     key: 'componentDidUpdate',
     value: function componentDidUpdate() {
-      this._autoUpdatePave();
+      updatePave(this);
     }
   }, {
     key: 'componentWillUnmount',
     value: function componentWillUnmount() {
-      this.store.off('change', this._autoUpdatePave);
+      this.store.unwatch(this._autoUpdatePave);
     }
   }, {
     key: 'reloadPave',
