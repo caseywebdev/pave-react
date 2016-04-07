@@ -6,7 +6,7 @@
   "main": "pave-react.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/orgsync/pave-react"
+    "url": "https://github.com/caseywebdev/pave-react"
   },
   "devDependencies": {
     "babel-preset-es2015": "6",
