@@ -3,129 +3,25 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Component = undefined;
+exports.createContainer = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _react = require('react');
 
+var _react2 = _interopRequireDefault(_react);
+
 var _pave = require('pave');
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var setPaveState = function setPaveState(c, state) {
-  for (var key in state) {
-    c.paveState[key] = state[key];
-  }
-};
-
-var applyPaveState = function applyPaveState(c) {
-  var stateKey = (0, _pave.toKey)(c.paveState);
-  if (stateKey === c.prevPaveStateKey) return;
-
-  c.prevPaveStateKey = stateKey;
-  if (c._reactInternalInstance) c.setState(c.paveState);
-};
-
-var updatePaveWatchQuery = function updatePaveWatchQuery(c) {
-  var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-  if (!c.getPaveWatchQuery) return;
-
-  var _options$props = options.props;
-  var props = _options$props === undefined ? c.props : _options$props;
-  var _options$context = options.context;
-  var context = _options$context === undefined ? c.context : _options$context;
-
-  var query = c.getPaveWatchQuery(props, context);
-  var key = (0, _pave.toKey)(query);
-  if (key === c.prevPaveWatchQueryKey) return;
-
-  c.prevPaveWatchQueryKey = key;
-  if (query) c.store.watch(query, c._autoUpdatePave);else c.store.unwatch(c._autoUpdatePave);
-};
-
-var updatePaveState = function updatePaveState(c) {
-  var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-  if (!c.getPaveState) return;
-
-  var _options$props2 = options.props;
-  var props = _options$props2 === undefined ? c.props : _options$props2;
-  var _options$context2 = options.context;
-  var context = _options$context2 === undefined ? c.context : _options$context2;
-
-  setPaveState(c, c.getPaveState(props, context));
-};
-
-var shiftQueue = function shiftQueue(c) {
-  var next = c.paveQueue.shift();
-  if (next) return updatePaveQuery(c, next.options, next.deferred);
-
-  applyPaveState(c);
-};
-
-var updatePaveQuery = function updatePaveQuery(c) {
-  var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-  var deferred = arguments.length <= 2 || arguments[2] === undefined ? new Deferred() : arguments[2];
-
-  if (c.paveState.isLoading) {
-    c.paveQueue.push({ options: options, deferred: deferred });
-    applyPaveState(c);
-    return deferred.promise;
-  }
-
-  var _options$context3 = options.context;
-  var context = _options$context3 === undefined ? c.context : _options$context3;
-  var _options$force = options.force;
-  var force = _options$force === undefined ? false : _options$force;
-  var _options$props3 = options.props;
-  var props = _options$props3 === undefined ? c.props : _options$props3;
-
-  var query = c.getPaveQuery && c.getPaveQuery(props, context);
-  if (!query) {
-    deferred.resolve();
-    shiftQueue(c);
-    return deferred.promise;
-  }
-
-  var key = (0, _pave.toKey)(query);
-  if (!force && c.paveKey === key) {
-    var error = c.paveState.error;
-
-    if (error) deferred.reject(error);else deferred.resolve();
-    shiftQueue(c);
-    return deferred.promise;
-  }
-
-  setPaveState(c, { isLoading: true, error: null });
-
-  c.store.run({ query: query, force: force }).catch(function (error) {
-    return setPaveState(c, { error: error });
-  }).then(function () {
-    c.paveKey = key;
-    setPaveState(c, { isLoading: false });
-    updatePaveState(c);
-    var error = c.paveState.error;
-
-    if (error) deferred.reject(error);else deferred.resolve();
-    shiftQueue(c);
-  });
-
-  applyPaveState(c);
-
-  return deferred.promise;
-};
-
-var updatePave = function updatePave(c, options) {
-  updatePaveWatchQuery(c, options);
-  updatePaveState(c, options);
-  return updatePaveQuery(c, options);
-};
 
 var Deferred = function Deferred() {
   var _this = this;
@@ -138,51 +34,158 @@ var Deferred = function Deferred() {
   });
 };
 
-var Component = exports.Component = function (_ReactComponent) {
-  _inherits(Component, _ReactComponent);
+var isEqualSubset = function isEqualSubset(a, b) {
+  for (var key in a) {
+    if (a[key] !== b[key]) return false;
+  }return true;
+};
 
-  function Component() {
-    var _Object$getPrototypeO;
+var isEqual = function isEqual(a, b) {
+  return isEqualSubset(a, b) && isEqualSubset(b, a);
+};
 
-    var _temp, _this2, _ret;
+var flushProp = function flushProp(c) {
+  if (!c.isStale && isEqual(c.prop, c.prevProp)) return;
 
-    _classCallCheck(this, Component);
+  c.prevProp = c.prop;
+  c.prop = _extends({}, c.prop);
+  c.isStale = false;
+  c.forceUpdate();
+};
 
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-      args[_key] = arguments[_key];
-    }
+var shiftQueue = function shiftQueue(c) {
+  var next = c.queue.shift();
+  if (next) return update(c, next.options, next.deferred);
 
-    return _ret = (_temp = (_this2 = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(Component)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this2), _this2.paveState = {}, _this2.paveQueue = [], _this2._autoUpdatePave = function () {
-      return updatePave(_this2);
-    }, _temp), _possibleConstructorReturn(_this2, _ret);
+  flushProp(c);
+};
+
+var update = function update(c) {
+  var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+  var deferred = arguments.length <= 2 || arguments[2] === undefined ? new Deferred() : arguments[2];
+
+  if (c.prop.isLoading) {
+    c.queue.push({ options: options, deferred: deferred });
+    flushProp(c);
+    return deferred.promise;
   }
 
-  _createClass(Component, [{
-    key: 'componentWillMount',
-    value: function componentWillMount() {
-      updatePave(this);
-    }
-  }, {
-    key: 'componentWillReceiveProps',
-    value: function componentWillReceiveProps(props, context) {
-      updatePave(this, { props: props, context: context });
-    }
-  }, {
-    key: 'componentDidUpdate',
-    value: function componentDidUpdate() {
-      updatePave(this);
-    }
-  }, {
-    key: 'componentWillUnmount',
-    value: function componentWillUnmount() {
-      this.store.unwatch(this._autoUpdatePave);
-    }
-  }, {
-    key: 'reloadPave',
-    value: function reloadPave() {
-      return updatePave(this, { force: true });
-    }
-  }]);
+  var manual = options.manual;
+  var _options$runOptions = options.runOptions;
+  var runOptions = _options$runOptions === undefined ? {} : _options$runOptions;
 
-  return Component;
-}(_react.Component);
+  if (!manual) {
+    var params = c.prop.params;
+
+    runOptions.query = c.getQuery && c.getQuery(params);
+    if (!runOptions.query) {
+      c.store.unwatch(c.setStale);
+      deferred.resolve();
+      shiftQueue(c);
+      return deferred.promise;
+    }
+
+    if (!runOptions.force && c.prevParams === params) {
+      var error = c.prop.error;
+
+      if (error) deferred.reject(error);else deferred.resolve();
+      shiftQueue(c);
+      return deferred.promise;
+    }
+
+    c.prevParams = params;
+    c.store.watch(runOptions.query, c.setStale);
+  }
+
+  c.prop.error = null;
+  c.prop.isLoading = true;
+  c.store.run(runOptions).catch(function (error) {
+    return c.prop.error = error;
+  }).then(function () {
+    c.prop.isLoading = false;
+    var error = c.prop.error;
+
+    if (error) deferred.reject(error);else deferred.resolve();
+    shiftQueue(c);
+  });
+
+  flushProp(c);
+
+  return deferred.promise;
+};
+
+var createContainer = exports.createContainer = function createContainer(_ref) {
+  var getQuery = _ref.getQuery;
+  var getInitialParams = _ref.getInitialParams;
+  var store = _ref.store;
+  return function (Component) {
+    var _class, _temp2;
+
+    return _temp2 = _class = function (_ReactComponent) {
+      _inherits(_class, _ReactComponent);
+
+      function _class() {
+        var _Object$getPrototypeO;
+
+        var _temp, _this2, _ret;
+
+        _classCallCheck(this, _class);
+
+        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
+        return _ret = (_temp = (_this2 = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(_class)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this2), _this2.store = store, _this2.getQuery = getQuery, _this2.queue = [], _this2.prop = _this2.prevProp = {
+          isLoading: false,
+
+          error: null,
+
+          params: {},
+
+          reload: function reload() {
+            return update(_this2, { runOptions: { force: true } });
+          },
+
+          setParams: function setParams(params) {
+            _this2.prop.params = _extends({}, _this2.prop.params);
+            for (var key in params) {
+              _this2.prop.params[key] = params[key];
+            }return update(_this2);
+          },
+
+          run: function run(runOptions) {
+            return update(_this2, { manual: true, runOptions: runOptions });
+          }
+        }, _this2.setStale = function () {
+          _this2.isStale = true;
+          if (!_this2.prop.isLoading) flushProp(_this2);
+        }, _temp), _possibleConstructorReturn(_this2, _ret);
+      }
+
+      _createClass(_class, [{
+        key: 'componentWillMount',
+        value: function componentWillMount() {
+          var context = this.context;
+          var props = this.props;
+          var setParams = this.prop.setParams;
+
+          setParams((getInitialParams || function () {
+            return {};
+          })(props, context));
+        }
+      }, {
+        key: 'componentWillUnmount',
+        value: function componentWillUnmount() {
+          this.store.unwatch(this.setStale);
+        }
+      }, {
+        key: 'render',
+        value: function render() {
+          return _react2.default.createElement(Component, _extends({}, this.props, { pave: this.prop }));
+        }
+      }]);
+
+      return _class;
+    }(_react.Component), _class.contextTypes = Component.contextTypes, _temp2;
+  };
+};
