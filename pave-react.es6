@@ -1,5 +1,5 @@
 import React, {Component as ReactComponent} from 'react';
-import {SyncPromise} from 'pave';
+import {clone, SyncPromise, update} from 'pave';
 
 class Deferred {
   constructor() {
@@ -18,22 +18,23 @@ const isEqualSubset = (a, b) => {
 const isEqual = (a, b) => isEqualSubset(a, b) && isEqualSubset(b, a);
 
 const flushProp = c => {
-  if (!c.isStale && isEqual(c.prop, c.prevProp)) return;
+  if (!c.isStale && c.prevProp && isEqual(c.prop, c.prevProp)) return;
 
+  const initialRender = !c.prevProp;
   c.prevProp = c.prop;
-  c.prop = {...c.prop};
+  c.prop = clone(c.prop);
   c.isStale = false;
-  c.forceUpdate();
+  if (!initialRender) c.forceUpdate();
 };
 
 const shiftQueue = c => {
   const next = c.queue.shift();
-  if (next) return update(c, next.options, next.deferred);
+  if (next) return run(c, next.options, next.deferred);
 
   flushProp(c);
 };
 
-const update = (c, options = {}, deferred = new Deferred()) => {
+const run = (c, options = {}, deferred = new Deferred()) => {
   if (c.prop.isLoading) {
     c.queue.push({options, deferred});
     flushProp(c);
@@ -89,22 +90,21 @@ export const createContainer = ({getQuery, getInitialParams, store}) =>
 
       queue = [];
 
-      prop = this.prevProp = {
+      prop = {
         isLoading: false,
 
         error: null,
 
         params: {},
 
-        reload: () => update(this, {runOptions: {force: true}}),
-
-        setParams: params => {
-          this.prop.params = {...this.prop.params};
-          for (let key in params) this.prop.params[key] = params[key];
-          return update(this);
+        update: delta => {
+          this.prop.params = update(this.prop.params, delta);
+          return run(this);
         },
 
-        run: runOptions => update(this, {manual: true, runOptions})
+        reload: () => run(this, {runOptions: {force: true}}),
+
+        run: runOptions => run(this, {manual: true, runOptions})
       };
 
       setStale = () => {
@@ -113,8 +113,8 @@ export const createContainer = ({getQuery, getInitialParams, store}) =>
       }
 
       componentWillMount() {
-        const {context, props, prop: {setParams}} = this;
-        setParams((getInitialParams || (() => ({})))(props, context));
+        const {context, props, prop: {update}} = this;
+        update({$set: (getInitialParams || (() => ({})))(props, context)});
       }
 
       componentWillUnmount() {

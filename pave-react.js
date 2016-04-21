@@ -5,9 +5,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.createContainer = undefined;
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _react = require('react');
 
@@ -45,22 +45,23 @@ var isEqual = function isEqual(a, b) {
 };
 
 var flushProp = function flushProp(c) {
-  if (!c.isStale && isEqual(c.prop, c.prevProp)) return;
+  if (!c.isStale && c.prevProp && isEqual(c.prop, c.prevProp)) return;
 
+  var initialRender = !c.prevProp;
   c.prevProp = c.prop;
-  c.prop = _extends({}, c.prop);
+  c.prop = (0, _pave.clone)(c.prop);
   c.isStale = false;
-  c.forceUpdate();
+  if (!initialRender) c.forceUpdate();
 };
 
 var shiftQueue = function shiftQueue(c) {
   var next = c.queue.shift();
-  if (next) return update(c, next.options, next.deferred);
+  if (next) return _run(c, next.options, next.deferred);
 
   flushProp(c);
 };
 
-var update = function update(c) {
+var _run = function _run(c) {
   var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
   var deferred = arguments.length <= 2 || arguments[2] === undefined ? new Deferred() : arguments[2];
 
@@ -135,26 +136,24 @@ var createContainer = exports.createContainer = function createContainer(_ref) {
           args[_key] = arguments[_key];
         }
 
-        return _ret = (_temp = (_this2 = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(_class)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this2), _this2.store = store, _this2.getQuery = getQuery, _this2.queue = [], _this2.prop = _this2.prevProp = {
+        return _ret = (_temp = (_this2 = _possibleConstructorReturn(this, (_Object$getPrototypeO = Object.getPrototypeOf(_class)).call.apply(_Object$getPrototypeO, [this].concat(args))), _this2), _this2.store = store, _this2.getQuery = getQuery, _this2.queue = [], _this2.prop = {
           isLoading: false,
 
           error: null,
 
           params: {},
 
-          reload: function reload() {
-            return update(_this2, { runOptions: { force: true } });
+          update: function update(delta) {
+            _this2.prop.params = (0, _pave.update)(_this2.prop.params, delta);
+            return _run(_this2);
           },
 
-          setParams: function setParams(params) {
-            _this2.prop.params = _extends({}, _this2.prop.params);
-            for (var key in params) {
-              _this2.prop.params[key] = params[key];
-            }return update(_this2);
+          reload: function reload() {
+            return _run(_this2, { runOptions: { force: true } });
           },
 
           run: function run(runOptions) {
-            return update(_this2, { manual: true, runOptions: runOptions });
+            return _run(_this2, { manual: true, runOptions: runOptions });
           }
         }, _this2.setStale = function () {
           _this2.isStale = true;
@@ -167,11 +166,11 @@ var createContainer = exports.createContainer = function createContainer(_ref) {
         value: function componentWillMount() {
           var context = this.context;
           var props = this.props;
-          var setParams = this.prop.setParams;
+          var update = this.prop.update;
 
-          setParams((getInitialParams || function () {
-            return {};
-          })(props, context));
+          update({ $set: (getInitialParams || function () {
+              return {};
+            })(props, context) });
         }
       }, {
         key: 'componentWillUnmount',
