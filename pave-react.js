@@ -9,11 +9,19 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+var _pave = require('pave');
+
+var _clone = require('pave/build/clone');
+
+var _clone2 = _interopRequireDefault(_clone);
+
 var _react = require('react');
 
 var _react2 = _interopRequireDefault(_react);
 
-var _pave = require('pave');
+var _update2 = require('pave/build/update');
+
+var _update3 = _interopRequireDefault(_update2);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -49,7 +57,7 @@ var flushProp = function flushProp(c) {
 
   var initialRender = !c.prevProp;
   c.prevProp = c.prop;
-  c.prop = (0, _pave.clone)(c.prop);
+  c.prop = (0, _clone2.default)(c.prop);
   c.isStale = false;
   if (!initialRender) c.forceUpdate();
 };
@@ -144,7 +152,7 @@ var createContainer = exports.createContainer = function createContainer(_ref) {
           params: {},
 
           update: function update(delta) {
-            _this2.prop.params = (0, _pave.update)(_this2.prop.params, delta);
+            _this2.prop.params = (0, _update3.default)(_this2.prop.params, delta);
             return _run(_this2);
           },
 

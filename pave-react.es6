@@ -1,5 +1,7 @@
+import {SyncPromise} from 'pave';
+import clone from 'pave/build/clone';
 import React, {Component as ReactComponent} from 'react';
-import {clone, SyncPromise, update} from 'pave';
+import update from 'pave/build/update';
 
 class Deferred {
   constructor() {

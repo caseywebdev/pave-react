@@ -16,7 +16,7 @@
     "cogs": "2"
   },
   "peerDependencies": {
-    "pave": "^0.2.7",
+    "pave": "0.2",
     "react": "0.14 || 15"
   }
 }
