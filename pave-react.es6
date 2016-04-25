@@ -1,7 +1,11 @@
 import {SyncPromise} from 'pave';
-import clone from 'pave/build/clone';
-import React, {Component as ReactComponent} from 'react';
-import update from 'pave/build/update';
+
+const isEqualSubset = (a, b) => {
+  for (let key in a) if (a[key] !== b[key]) return false;
+  return true;
+};
+
+const isEqual = (a, b) => isEqualSubset(a, b) && isEqualSubset(b, a);
 
 class Deferred {
   constructor() {
@@ -12,118 +16,103 @@ class Deferred {
   }
 }
 
-const isEqualSubset = (a, b) => {
-  for (let key in a) if (a[key] !== b[key]) return false;
-  return true;
-};
+export default class {
+  error = null;
+  isLoading = false;
+  queue = [];
+  setStale = () => {
+    this.isStale = true;
+    if (!this.isLoading) this.flush();
+  }
 
-const isEqual = (a, b) => isEqualSubset(a, b) && isEqualSubset(b, a);
+  constructor({component, query, store}) {
+    this.component = component;
+    const {componentWillUnmount} = component;
+    component.componentWillUnmount = (...args) => {
+      component::componentWillUnmount(...args);
+      this.destroy();
+    };
+    this.query = query;
+    this.store = store;
+    this.runOrQueue();
+  }
 
-const flushProp = c => {
-  if (!c.isStale && c.prevProp && isEqual(c.prop, c.prevProp)) return;
+  setQuery(query) {
+    this.query = query;
+    return this.runOrQueue();
+  }
 
-  const initialRender = !c.prevProp;
-  c.prevProp = c.prop;
-  c.prop = clone(c.prop);
-  c.isStale = false;
-  if (!initialRender) c.forceUpdate();
-};
+  reload() {
+    return this.runOrQueue({runOptions: {force: true}});
+  }
 
-const shiftQueue = c => {
-  const next = c.queue.shift();
-  if (next) return run(c, next.options, next.deferred);
+  run(runOptions) {
+    return this.runOrQueue({manual: true, runOptions});
+  }
 
-  flushProp(c);
-};
+  destroy() {
+    this.store.unwatch(this.setStale);
+  }
 
-const run = (c, options = {}, deferred = new Deferred()) => {
-  if (c.prop.isLoading) {
-    c.queue.push({options, deferred});
-    flushProp(c);
+  flush() {
+    const {error, isLoading, query} = this;
+    const flushed = {error, isLoading, query};
+    if (!this.isStale && this.flushed && isEqual(flushed, this.flushed)) return;
+
+    this.flushed = flushed;
+    this.isStale = false;
+    this.component.setState({});
+  }
+
+  shiftQueue() {
+    const next = this.queue.shift();
+    if (next) return this.runOrQueue(next.options, next.deferred);
+
+    this.flush();
+  }
+
+  runOrQueue(options = {}, deferred = new Deferred()) {
+    if (this.isLoading) {
+      this.queue.push({options, deferred});
+      this.flush();
+      return deferred.promise;
+    }
+
+    const {manual, runOptions = {}} = options;
+    if (!manual) {
+      const query = runOptions.query = this.query;
+      if (!query) {
+        this.store.unwatch(this.setStale);
+        deferred.resolve();
+        this.shiftQueue();
+        return deferred.promise;
+      }
+
+      if (!runOptions.force && this.prevQuery === query) {
+        const {error} = this;
+        if (error) deferred.reject(error); else deferred.resolve();
+        this.shiftQueue();
+        return deferred.promise;
+      }
+
+      this.prevQuery = query;
+      this.store.watch(query, this.setStale);
+    }
+
+    this.error = null;
+    this.isLoading = true;
+    this.store
+      .run(runOptions)
+      .catch(error => this.error = error)
+      .then(() => {
+        this.isLoading = false;
+        const {error} = this;
+        if (error) deferred.reject(error); else deferred.resolve();
+        this.shiftQueue();
+      });
+
+    this.flush();
+
     return deferred.promise;
   }
-
-  const {manual, runOptions = {}} = options;
-  if (!manual) {
-    const {params} = c.prop;
-    runOptions.query = c.getQuery && c.getQuery(params);
-    if (!runOptions.query) {
-      c.store.unwatch(c.setStale);
-      deferred.resolve();
-      shiftQueue(c);
-      return deferred.promise;
-    }
-
-    if (!runOptions.force && c.prevParams === params) {
-      const {error} = c.prop;
-      if (error) deferred.reject(error); else deferred.resolve();
-      shiftQueue(c);
-      return deferred.promise;
-    }
-
-    c.prevParams = params;
-    c.store.watch(runOptions.query, c.setStale);
-  }
-
-  c.prop.error = null;
-  c.prop.isLoading = true;
-  c.store.run(runOptions)
-    .catch(error => c.prop.error = error)
-    .then(() => {
-      c.prop.isLoading = false;
-      const {error} = c.prop;
-      if (error) deferred.reject(error); else deferred.resolve();
-      shiftQueue(c);
-    });
-
-  flushProp(c);
-
-  return deferred.promise;
-};
-
-export const createContainer = ({getQuery, getInitialParams, store}) =>
-  Component =>
-    class extends ReactComponent {
-      static contextTypes = Component.contextTypes;
-
-      store = store;
-
-      getQuery = getQuery;
-
-      queue = [];
-
-      prop = {
-        isLoading: false,
-
-        error: null,
-
-        params: {},
-
-        update: delta => {
-          this.prop.params = update(this.prop.params, delta);
-          return run(this);
-        },
-
-        reload: () => run(this, {runOptions: {force: true}}),
-
-        run: runOptions => run(this, {manual: true, runOptions})
-      };
-
-      setStale = () => {
-        this.isStale = true;
-        if (!this.prop.isLoading) flushProp(this);
-      }
-
-      componentWillMount() {
-        const {context, props, prop: {update}} = this;
-        update({$set: (getInitialParams || (() => ({})))(props, context)});
-      }
-
-      componentWillUnmount() {
-        this.store.unwatch(this.setStale);
-      }
-
-      render() {
-        return <Component {...this.props} pave={this.prop} />;
-      }
-    };
+}
