@@ -61,7 +61,7 @@ export default class {
 
     this.flushed = flushed;
     this.isStale = false;
-    this.component.setState({pave: flushed});
+    this.component.setState({});
   }
 
   shiftQueue() {
