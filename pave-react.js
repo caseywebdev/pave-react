@@ -60,7 +60,7 @@ var createComponent = exports.createComponent = function createComponent(Compone
     _createClass(_class, [{
       key: 'getChildContext',
       value: function getChildContext() {
-        return { store: this.getStore() };
+        return { paveStore: this.getStore() };
       }
     }, {
       key: 'componentWillMount',
@@ -150,8 +150,8 @@ var createComponent = exports.createComponent = function createComponent(Compone
 
     return _class;
   }(_react.Component), _class.static = Component, _class.childContextTypes = {
-    store: _react.PropTypes.instanceOf(_pave.Store)
+    paveStore: _react.PropTypes.instanceOf(_pave.Store)
   }, _class.contextTypes = {
-    store: _react.PropTypes.instanceOf(_pave.Store)
+    paveStore: _react.PropTypes.instanceOf(_pave.Store)
   }, _temp2;
 };

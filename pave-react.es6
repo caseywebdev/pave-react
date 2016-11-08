@@ -12,15 +12,15 @@ export const createComponent = (Component, {
     static static = Component;
 
     static childContextTypes = {
-      store: PropTypes.instanceOf(Store)
+      paveStore: PropTypes.instanceOf(Store)
     };
 
     static contextTypes = {
-      store: PropTypes.instanceOf(Store)
+      paveStore: PropTypes.instanceOf(Store)
     };
 
     getChildContext() {
-      return {store: this.getStore()};
+      return {paveStore: this.getStore()};
     }
 
     params = params;
