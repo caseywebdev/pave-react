@@ -49,7 +49,7 @@ export const createComponent = (Component, {
     }
 
     getArgs() {
-      const {context, props, state: {params}} = this;
+      const {context, params, props} = this;
       const store = this.getStore();
       return {context, params, props, store};
     }

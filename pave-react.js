@@ -94,8 +94,8 @@ var createComponent = exports.createComponent = function createComponent(Compone
       key: 'getArgs',
       value: function getArgs() {
         var context = this.context,
-            props = this.props,
-            params = this.state.params;
+            params = this.params,
+            props = this.props;
 
         var store = this.getStore();
         return { context: context, params: params, props: props, store: store };
