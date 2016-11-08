@@ -1,10 +1,13 @@
 import PaveSubscription from 'pave-subscription';
-import {Store} from 'pave';
+import {Store, toDelta} from 'pave';
 import React, {Component as ReactComponent, PropTypes} from 'react';
 
+let contextId = 0;
+
 export const createComponent = (Component, {
-  getQuery = () => {},
+  createContextPaths = {},
   getCache = () => ({}),
+  getQuery = () => {},
   params = {},
   store
 }) =>
@@ -12,15 +15,20 @@ export const createComponent = (Component, {
     static static = Component;
 
     static childContextTypes = {
-      paveStore: PropTypes.instanceOf(Store)
+      paveStore: PropTypes.instanceOf(Store),
+      paveContextPaths: PropTypes.object
     };
 
     static contextTypes = {
-      paveStore: PropTypes.instanceOf(Store)
+      paveStore: PropTypes.instanceOf(Store),
+      paveContextPaths: PropTypes.object
     };
 
     getChildContext() {
-      return {paveStore: this.getStore()};
+      return {
+        paveStore: this.getStore(),
+        paveContextPaths: this.getContextPaths()
+      };
     }
 
     params = params;
@@ -39,13 +47,40 @@ export const createComponent = (Component, {
 
     componentWillUnmount() {
       this.sub.destroy();
+      this.unsetCreatedContextPaths();
     }
 
     getStore() {
-      if (!store) store = this.props.paveStore || this.context.paveStore;
-      if (!store) throw new Error('A Pave store is required');
+      if (this.store) return this.store;
 
-      return store;
+      this.store = store || this.props.paveStore || this.context.paveStore;
+      if (!this.store) throw new Error('A Pave store is required');
+
+      return this.store;
+    }
+
+    getContextPaths() {
+      if (this.contextPaths) return this.contextPaths;
+
+      const inherited = this.context.paveContextPaths;
+      const created = {};
+      for (let key in createContextPaths) {
+        const {inherit = false, prefix = []} = createContextPaths[key];
+        if (!inherit || !inherited[key]) {
+          created[key] = prefix.concat(`${key}-${++contextId}`);
+        }
+      }
+
+      this.createdContextPaths = created;
+
+      return this.contextPaths = {...inherited, ...created};
+    }
+
+    unsetCreatedContextPaths() {
+      const paths = this.createdContextPaths;
+      const deltas = [];
+      for (let key in paths) deltas.push(toDelta(paths[key], {$unset: true}));
+      if (deltas.length) this.getStore().update(deltas);
     }
 
     getArgs() {
@@ -66,6 +101,7 @@ export const createComponent = (Component, {
       const {params, sub, sub: {error, isLoading}} = this;
       return {
         cache: this.getCache(),
+        contextPaths: this.getContextPaths(),
         error,
         isLoading,
         params,

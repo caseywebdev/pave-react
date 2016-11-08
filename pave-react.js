@@ -27,15 +27,19 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+var contextId = 0;
+
 var createComponent = exports.createComponent = function createComponent(Component, _ref) {
   var _class, _temp2;
 
-  var _ref$getQuery = _ref.getQuery,
-      _getQuery = _ref$getQuery === undefined ? function () {} : _ref$getQuery,
+  var _ref$createContextPat = _ref.createContextPaths,
+      createContextPaths = _ref$createContextPat === undefined ? {} : _ref$createContextPat,
       _ref$getCache = _ref.getCache,
       _getCache = _ref$getCache === undefined ? function () {
     return {};
   } : _ref$getCache,
+      _ref$getQuery = _ref.getQuery,
+      _getQuery = _ref$getQuery === undefined ? function () {} : _ref$getQuery,
       _ref$params = _ref.params,
       params = _ref$params === undefined ? {} : _ref$params,
       store = _ref.store;
@@ -60,7 +64,10 @@ var createComponent = exports.createComponent = function createComponent(Compone
     _createClass(_class, [{
       key: 'getChildContext',
       value: function getChildContext() {
-        return { paveStore: this.getStore() };
+        return {
+          paveStore: this.getStore(),
+          paveContextPaths: this.getContextPaths()
+        };
       }
     }, {
       key: 'componentWillMount',
@@ -81,14 +88,49 @@ var createComponent = exports.createComponent = function createComponent(Compone
       key: 'componentWillUnmount',
       value: function componentWillUnmount() {
         this.sub.destroy();
+        this.unsetCreatedContextPaths();
       }
     }, {
       key: 'getStore',
       value: function getStore() {
-        if (!store) store = this.props.paveStore || this.context.paveStore;
-        if (!store) throw new Error('A Pave store is required');
+        if (this.store) return this.store;
 
-        return store;
+        this.store = store || this.props.paveStore || this.context.paveStore;
+        if (!this.store) throw new Error('A Pave store is required');
+
+        return this.store;
+      }
+    }, {
+      key: 'getContextPaths',
+      value: function getContextPaths() {
+        if (this.contextPaths) return this.contextPaths;
+
+        var inherited = this.context.paveContextPaths;
+        var created = {};
+        for (var key in createContextPaths) {
+          var _createContextPaths$k = createContextPaths[key],
+              _createContextPaths$k2 = _createContextPaths$k.inherit,
+              inherit = _createContextPaths$k2 === undefined ? false : _createContextPaths$k2,
+              _createContextPaths$k3 = _createContextPaths$k.prefix,
+              prefix = _createContextPaths$k3 === undefined ? [] : _createContextPaths$k3;
+
+          if (!inherit || !inherited[key]) {
+            created[key] = prefix.concat(key + '-' + ++contextId);
+          }
+        }
+
+        this.createdContextPaths = created;
+
+        return this.contextPaths = _extends({}, inherited, created);
+      }
+    }, {
+      key: 'unsetCreatedContextPaths',
+      value: function unsetCreatedContextPaths() {
+        var paths = this.createdContextPaths;
+        var deltas = [];
+        for (var key in paths) {
+          deltas.push((0, _pave.toDelta)(paths[key], { $unset: true }));
+        }if (deltas.length) this.getStore().update(deltas);
       }
     }, {
       key: 'getArgs',
@@ -121,6 +163,7 @@ var createComponent = exports.createComponent = function createComponent(Compone
 
         return {
           cache: this.getCache(),
+          contextPaths: this.getContextPaths(),
           error: error,
           isLoading: isLoading,
           params: params,
@@ -150,8 +193,10 @@ var createComponent = exports.createComponent = function createComponent(Compone
 
     return _class;
   }(_react.Component), _class.static = Component, _class.childContextTypes = {
-    paveStore: _react.PropTypes.instanceOf(_pave.Store)
+    paveStore: _react.PropTypes.instanceOf(_pave.Store),
+    paveContextPaths: _react.PropTypes.object
   }, _class.contextTypes = {
-    paveStore: _react.PropTypes.instanceOf(_pave.Store)
+    paveStore: _react.PropTypes.instanceOf(_pave.Store),
+    paveContextPaths: _react.PropTypes.object
   }, _temp2;
 };
