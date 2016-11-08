@@ -26,11 +26,11 @@ export const createComponent = (Component, {
     params = params;
 
     componentWillMount() {
-      this.updatePave();
       this.sub = new PaveSubscription({
         store: this.getStore(),
         query: this.getQuery(),
         onChange: sub => {
+          this.sub = sub;
           this.updatePave();
           sub.setQuery(this.getQuery());
         }
