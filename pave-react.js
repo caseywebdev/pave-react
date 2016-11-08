@@ -3,166 +3,155 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.createComponent = undefined;
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+var _paveSubscription = require('pave-subscription');
+
+var _paveSubscription2 = _interopRequireDefault(_paveSubscription);
+
 var _pave = require('pave');
+
+var _react = require('react');
+
+var _react2 = _interopRequireDefault(_react);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var isEqualSubset = function isEqualSubset(a, b) {
-  for (var key in a) {
-    if (a[key] !== b[key]) return false;
-  }return true;
-};
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
-var isEqual = function isEqual(a, b) {
-  return isEqualSubset(a, b) && isEqualSubset(b, a);
-};
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var Deferred = function Deferred() {
-  var _this = this;
+var createComponent = exports.createComponent = function createComponent(Component, _ref) {
+  var _class, _temp2;
 
-  _classCallCheck(this, Deferred);
+  var _ref$getQuery = _ref.getQuery,
+      _getQuery = _ref$getQuery === undefined ? function () {} : _ref$getQuery,
+      _ref$getCache = _ref.getCache,
+      _getCache = _ref$getCache === undefined ? function () {
+    return {};
+  } : _ref$getCache,
+      _ref$params = _ref.params,
+      params = _ref$params === undefined ? {} : _ref$params,
+      store = _ref.store;
 
-  this.promise = new _pave.SyncPromise(function (resolve, reject) {
-    _this.resolve = resolve;
-    _this.reject = reject;
-  });
-};
+  return _temp2 = _class = function (_ReactComponent) {
+    _inherits(_class, _ReactComponent);
 
-var _class = function () {
-  function _class(_ref) {
-    var _this2 = this;
+    function _class() {
+      var _ref2;
 
-    var component = _ref.component;
-    var query = _ref.query;
-    var store = _ref.store;
+      var _temp, _this, _ret;
 
-    _classCallCheck(this, _class);
+      _classCallCheck(this, _class);
 
-    this.error = null;
-    this.isLoading = false;
-    this.queue = [];
-
-    this.setStale = function () {
-      _this2.isStale = true;
-      if (!_this2.isLoading) _this2.flush();
-    };
-
-    this.component = component;
-    var componentWillUnmount = component.componentWillUnmount;
-
-    component.componentWillUnmount = function () {
-      componentWillUnmount.call.apply(componentWillUnmount, [component].concat(Array.prototype.slice.call(arguments)));
-      _this2.destroy();
-    };
-    this.query = query;
-    this.store = store;
-    this.runOrQueue();
-  }
-
-  _createClass(_class, [{
-    key: 'setQuery',
-    value: function setQuery(query) {
-      this.query = query;
-      return this.runOrQueue();
-    }
-  }, {
-    key: 'reload',
-    value: function reload() {
-      return this.runOrQueue({ runOptions: { force: true } });
-    }
-  }, {
-    key: 'run',
-    value: function run(runOptions) {
-      return this.runOrQueue({ manual: true, runOptions: runOptions });
-    }
-  }, {
-    key: 'destroy',
-    value: function destroy() {
-      this.store.unwatch(this.setStale);
-    }
-  }, {
-    key: 'flush',
-    value: function flush() {
-      var error = this.error;
-      var isLoading = this.isLoading;
-      var query = this.query;
-
-      var flushed = { error: error, isLoading: isLoading, query: query };
-      if (!this.isStale && this.flushed && isEqual(flushed, this.flushed)) return;
-
-      this.flushed = flushed;
-      this.isStale = false;
-      this.component.setState({});
-    }
-  }, {
-    key: 'shiftQueue',
-    value: function shiftQueue() {
-      var next = this.queue.shift();
-      if (next) return this.runOrQueue(next.options, next.deferred);
-
-      this.flush();
-    }
-  }, {
-    key: 'runOrQueue',
-    value: function runOrQueue() {
-      var _this3 = this;
-
-      var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-      var deferred = arguments.length <= 1 || arguments[1] === undefined ? new Deferred() : arguments[1];
-
-      if (this.isLoading) {
-        this.queue.push({ options: options, deferred: deferred });
-        this.flush();
-        return deferred.promise;
+      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
       }
 
-      var manual = options.manual;
-      var _options$runOptions = options.runOptions;
-      var runOptions = _options$runOptions === undefined ? {} : _options$runOptions;
-
-      if (!manual) {
-        var query = runOptions.query = this.query;
-        if (!query) {
-          this.store.unwatch(this.setStale);
-          deferred.resolve();
-          this.shiftQueue();
-          return deferred.promise;
-        }
-
-        if (!runOptions.force && this.prevQuery === query) {
-          var error = this.error;
-
-          if (error) deferred.reject(error);else deferred.resolve();
-          this.shiftQueue();
-          return deferred.promise;
-        }
-
-        this.prevQuery = query;
-        this.store.watch(query, this.setStale);
-      }
-
-      this.error = null;
-      this.isLoading = true;
-      this.store.run(runOptions).catch(function (error) {
-        return _this3.error = error;
-      }).then(function () {
-        _this3.isLoading = false;
-        var error = _this3.error;
-
-        if (error) deferred.reject(error);else deferred.resolve();
-        _this3.shiftQueue();
-      });
-
-      this.flush();
-
-      return deferred.promise;
+      return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref2 = _class.__proto__ || Object.getPrototypeOf(_class)).call.apply(_ref2, [this].concat(args))), _this), _this.params = params, _temp), _possibleConstructorReturn(_this, _ret);
     }
-  }]);
 
-  return _class;
-}();
+    _createClass(_class, [{
+      key: 'getChildContext',
+      value: function getChildContext() {
+        return { store: this.getStore() };
+      }
+    }, {
+      key: 'componentWillMount',
+      value: function componentWillMount() {
+        var _this2 = this;
 
-exports.default = _class;
+        this.updatePave();
+        this.sub = new _paveSubscription2.default({
+          store: this.getStore(),
+          query: this.getQuery(),
+          onChange: function onChange(sub) {
+            _this2.updatePave();
+            sub.setQuery(_this2.getQuery());
+          }
+        });
+      }
+    }, {
+      key: 'componentWillUnmount',
+      value: function componentWillUnmount() {
+        this.sub.destroy();
+      }
+    }, {
+      key: 'getStore',
+      value: function getStore() {
+        if (!store) store = this.props.paveStore || this.context.paveStore;
+        if (!store) throw new Error('A Pave store is required');
+
+        return store;
+      }
+    }, {
+      key: 'getArgs',
+      value: function getArgs() {
+        var context = this.context,
+            props = this.props,
+            params = this.state.params;
+
+        var store = this.getStore();
+        return { context: context, params: params, props: props, store: store };
+      }
+    }, {
+      key: 'getCache',
+      value: function getCache() {
+        return _getCache(this.getArgs());
+      }
+    }, {
+      key: 'getQuery',
+      value: function getQuery() {
+        return _getQuery(this.getArgs());
+      }
+    }, {
+      key: 'getPave',
+      value: function getPave() {
+        var params = this.params,
+            sub = this.sub,
+            _sub = this.sub,
+            error = _sub.error,
+            isLoading = _sub.isLoading;
+
+        return {
+          cache: this.getCache(),
+          error: error,
+          isLoading: isLoading,
+          params: params,
+          reload: sub.reload.bind(sub),
+          run: sub.run.bind(sub),
+          setParams: this.setParams.bind(this),
+          store: this.getStore()
+        };
+      }
+    }, {
+      key: 'updatePave',
+      value: function updatePave() {
+        this.setState({ pave: this.getPave() });
+      }
+    }, {
+      key: 'setParams',
+      value: function setParams(params) {
+        this.params = _extends({}, this.params, { params: params });
+        this.sub.setQuery(this.getQuery());
+      }
+    }, {
+      key: 'render',
+      value: function render() {
+        return _react2.default.createElement(Component, _extends({}, this.props, this.state));
+      }
+    }]);
+
+    return _class;
+  }(_react.Component), _class.static = Component, _class.childContextTypes = {
+    store: _react.PropTypes.instanceOf(_pave.Store)
+  }, _class.contextTypes = {
+    store: _react.PropTypes.instanceOf(_pave.Store)
+  }, _temp2;
+};

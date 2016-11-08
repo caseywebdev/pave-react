@@ -1,118 +1,91 @@
-import {SyncPromise} from 'pave';
+import PaveSubscription from 'pave-subscription';
+import {Store} from 'pave';
+import React, {Component as ReactComponent, PropTypes} from 'react';
 
-const isEqualSubset = (a, b) => {
-  for (let key in a) if (a[key] !== b[key]) return false;
-  return true;
-};
+export const createComponent = (Component, {
+  getQuery = () => {},
+  getCache = () => ({}),
+  params = {},
+  store
+}) =>
+  class extends ReactComponent {
+    static static = Component;
 
-const isEqual = (a, b) => isEqualSubset(a, b) && isEqualSubset(b, a);
-
-class Deferred {
-  constructor() {
-    this.promise = new SyncPromise((resolve, reject) => {
-      this.resolve = resolve;
-      this.reject = reject;
-    });
-  }
-}
-
-export default class {
-  error = null;
-  isLoading = false;
-  queue = [];
-  setStale = () => {
-    this.isStale = true;
-    if (!this.isLoading) this.flush();
-  }
-
-  constructor({component, query, store}) {
-    this.component = component;
-    const {componentWillUnmount} = component;
-    component.componentWillUnmount = (...args) => {
-      component::componentWillUnmount(...args);
-      this.destroy();
+    static childContextTypes = {
+      store: PropTypes.instanceOf(Store)
     };
-    this.query = query;
-    this.store = store;
-    this.runOrQueue();
-  }
 
-  setQuery(query) {
-    this.query = query;
-    return this.runOrQueue();
-  }
+    static contextTypes = {
+      store: PropTypes.instanceOf(Store)
+    };
 
-  reload() {
-    return this.runOrQueue({runOptions: {force: true}});
-  }
-
-  run(runOptions) {
-    return this.runOrQueue({manual: true, runOptions});
-  }
-
-  destroy() {
-    this.store.unwatch(this.setStale);
-  }
-
-  flush() {
-    const {error, isLoading, query} = this;
-    const flushed = {error, isLoading, query};
-    if (!this.isStale && this.flushed && isEqual(flushed, this.flushed)) return;
-
-    this.flushed = flushed;
-    this.isStale = false;
-    this.component.setState({});
-  }
-
-  shiftQueue() {
-    const next = this.queue.shift();
-    if (next) return this.runOrQueue(next.options, next.deferred);
-
-    this.flush();
-  }
-
-  runOrQueue(options = {}, deferred = new Deferred()) {
-    if (this.isLoading) {
-      this.queue.push({options, deferred});
-      this.flush();
-      return deferred.promise;
+    getChildContext() {
+      return {store: this.getStore()};
     }
 
-    const {manual, runOptions = {}} = options;
-    if (!manual) {
-      const query = runOptions.query = this.query;
-      if (!query) {
-        this.store.unwatch(this.setStale);
-        deferred.resolve();
-        this.shiftQueue();
-        return deferred.promise;
-      }
+    params = params;
 
-      if (!runOptions.force && this.prevQuery === query) {
-        const {error} = this;
-        if (error) deferred.reject(error); else deferred.resolve();
-        this.shiftQueue();
-        return deferred.promise;
-      }
-
-      this.prevQuery = query;
-      this.store.watch(query, this.setStale);
-    }
-
-    this.error = null;
-    this.isLoading = true;
-    this.store
-      .run(runOptions)
-      .catch(error => this.error = error)
-      .then(() => {
-        this.isLoading = false;
-        const {error} = this;
-        if (error) deferred.reject(error); else deferred.resolve();
-        this.shiftQueue();
+    componentWillMount() {
+      this.updatePave();
+      this.sub = new PaveSubscription({
+        store: this.getStore(),
+        query: this.getQuery(),
+        onChange: sub => {
+          this.updatePave();
+          sub.setQuery(this.getQuery());
+        }
       });
+    }
 
-    this.flush();
+    componentWillUnmount() {
+      this.sub.destroy();
+    }
 
-    return deferred.promise;
-  }
-}
+    getStore() {
+      if (!store) store = this.props.paveStore || this.context.paveStore;
+      if (!store) throw new Error('A Pave store is required');
+
+      return store;
+    }
+
+    getArgs() {
+      const {context, props, state: {params}} = this;
+      const store = this.getStore();
+      return {context, params, props, store};
+    }
+
+    getCache() {
+      return getCache(this.getArgs());
+    }
+
+    getQuery() {
+      return getQuery(this.getArgs());
+    }
+
+    getPave() {
+      const {params, sub, sub: {error, isLoading}} = this;
+      return {
+        cache: this.getCache(),
+        error,
+        isLoading,
+        params,
+        reload: ::sub.reload,
+        run: ::sub.run,
+        setParams: ::this.setParams,
+        store: this.getStore()
+      };
+    }
+
+    updatePave() {
+      this.setState({pave: this.getPave()});
+    }
+
+    setParams(params) {
+      this.params = {...this.params, params};
+      this.sub.setQuery(this.getQuery());
+    }
+
+    render() {
+      return <Component {...this.props} {...this.state} />;
+    }
+  };
