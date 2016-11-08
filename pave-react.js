@@ -67,11 +67,11 @@ var createComponent = exports.createComponent = function createComponent(Compone
       value: function componentWillMount() {
         var _this2 = this;
 
-        this.updatePave();
         this.sub = new _paveSubscription2.default({
           store: this.getStore(),
           query: this.getQuery(),
           onChange: function onChange(sub) {
+            _this2.sub = sub;
             _this2.updatePave();
             sub.setQuery(_this2.getQuery());
           }
