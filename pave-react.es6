@@ -85,8 +85,9 @@ export const createComponent = (Component, {
 
     getArgs() {
       const {context, params, props} = this;
+      const contextPaths = this.getContextPaths();
       const store = this.getStore();
-      return {context, params, props, store};
+      return {context, contextPaths, params, props, store};
     }
 
     getCache() {

@@ -139,8 +139,9 @@ var createComponent = exports.createComponent = function createComponent(Compone
             params = this.params,
             props = this.props;
 
+        var contextPaths = this.getContextPaths();
         var store = this.getStore();
-        return { context: context, params: params, props: props, store: store };
+        return { context: context, contextPaths: contextPaths, params: params, props: props, store: store };
       }
     }, {
       key: 'getCache',
