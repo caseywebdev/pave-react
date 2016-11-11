@@ -15,19 +15,20 @@ export const createComponent = (Component, {
     static static = Component;
 
     static childContextTypes = {
-      paveStore: PropTypes.instanceOf(Store),
-      paveContextPaths: PropTypes.object
+      paveContextPaths: PropTypes.object,
+      paveStore: PropTypes.instanceOf(Store)
     };
 
     static contextTypes = {
-      paveStore: PropTypes.instanceOf(Store),
-      paveContextPaths: PropTypes.object
+      ...Component.childContextTypes,
+      paveContextPaths: PropTypes.object,
+      paveStore: PropTypes.instanceOf(Store)
     };
 
     getChildContext() {
       return {
-        paveStore: this.getStore(),
-        paveContextPaths: this.getContextPaths()
+        paveContextPaths: this.getContextPaths(),
+        paveStore: this.getStore()
       };
     }
 
@@ -35,14 +36,19 @@ export const createComponent = (Component, {
 
     componentWillMount() {
       this.sub = new PaveSubscription({
-        store: this.getStore(),
-        query: this.getQuery(),
         onChange: sub => {
           this.sub = sub;
           this.updatePave();
           sub.setQuery(this.getQuery());
-        }
+        },
+        query: this.getQuery(),
+        store: this.getStore()
       });
+    }
+
+    componentWillReceiveProps(props, context) {
+      this.updatePave(props, context);
+      this.sub.setQuery(this.getQuery(props, context));
     }
 
     componentWillUnmount() {
@@ -50,19 +56,19 @@ export const createComponent = (Component, {
       this.unsetCreatedContextPaths();
     }
 
-    getStore() {
+    getStore(props = this.props, context = this.context) {
       if (this.store) return this.store;
 
-      this.store = store || this.props.paveStore || this.context.paveStore;
+      this.store = store || props.paveStore || context.paveStore;
       if (!this.store) throw new Error('A Pave store is required');
 
       return this.store;
     }
 
-    getContextPaths() {
+    getContextPaths(context = this.context) {
       if (this.contextPaths) return this.contextPaths;
 
-      const inherited = this.context.paveContextPaths;
+      const inherited = context.paveContextPaths;
       const created = {};
       for (let key in createContextPaths) {
         const {inherit = false, prefix = []} = createContextPaths[key];
@@ -83,47 +89,42 @@ export const createComponent = (Component, {
       if (deltas.length) this.getStore().update(deltas);
     }
 
-    getArgs() {
-      const {
-        context,
-        params,
-        props,
-        sub: {error = null, isLoading = false} = {}
-      } = this;
-      const contextPaths = this.getContextPaths();
-      const store = this.getStore();
+    getArgs(props = this.props, context = this.context) {
+      const {params, sub: {error = null, isLoading = false} = {}} = this;
+      const contextPaths = this.getContextPaths(context);
+      const store = this.getStore(props, context);
       return {context, contextPaths, error, isLoading, params, props, store};
     }
 
-    getCache() {
-      return getCache(this.getArgs());
+    getCache(props, context) {
+      return getCache(this.getArgs(props, context));
     }
 
-    getQuery() {
-      return getQuery(this.getArgs());
+    getQuery(props, context) {
+      return getQuery(this.getArgs(props, context));
     }
 
-    getPave() {
+    getPave(props, context) {
       const {params, sub, sub: {error, isLoading}} = this;
       return {
-        cache: this.getCache(),
-        contextPaths: this.getContextPaths(),
+        cache: this.getCache(props, context),
+        contextPaths: this.getContextPaths(context),
         error,
         isLoading,
         params,
         reload: ::sub.reload,
         run: ::sub.run,
         setParams: ::this.setParams,
-        store: this.getStore()
+        store: this.getStore(props, context)
       };
     }
 
-    updatePave() {
-      this.setState({pave: this.getPave()});
+    updatePave(props, context) {
+      this.setState({pave: this.getPave(props, context)});
     }
 
     setParams(params) {
-      this.params = {...this.params, params};
+      this.params = {...this.params, ...params};
       this.sub.setQuery(this.getQuery());
     }
 

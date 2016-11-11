@@ -65,8 +65,8 @@ var createComponent = exports.createComponent = function createComponent(Compone
       key: 'getChildContext',
       value: function getChildContext() {
         return {
-          paveStore: this.getStore(),
-          paveContextPaths: this.getContextPaths()
+          paveContextPaths: this.getContextPaths(),
+          paveStore: this.getStore()
         };
       }
     }, {
@@ -75,14 +75,20 @@ var createComponent = exports.createComponent = function createComponent(Compone
         var _this2 = this;
 
         this.sub = new _paveSubscription2.default({
-          store: this.getStore(),
-          query: this.getQuery(),
           onChange: function onChange(sub) {
             _this2.sub = sub;
             _this2.updatePave();
             sub.setQuery(_this2.getQuery());
-          }
+          },
+          query: this.getQuery(),
+          store: this.getStore()
         });
+      }
+    }, {
+      key: 'componentWillReceiveProps',
+      value: function componentWillReceiveProps(props, context) {
+        this.updatePave(props, context);
+        this.sub.setQuery(this.getQuery(props, context));
       }
     }, {
       key: 'componentWillUnmount',
@@ -93,9 +99,12 @@ var createComponent = exports.createComponent = function createComponent(Compone
     }, {
       key: 'getStore',
       value: function getStore() {
+        var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.props;
+        var context = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.context;
+
         if (this.store) return this.store;
 
-        this.store = store || this.props.paveStore || this.context.paveStore;
+        this.store = store || props.paveStore || context.paveStore;
         if (!this.store) throw new Error('A Pave store is required');
 
         return this.store;
@@ -103,9 +112,11 @@ var createComponent = exports.createComponent = function createComponent(Compone
     }, {
       key: 'getContextPaths',
       value: function getContextPaths() {
+        var context = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.context;
+
         if (this.contextPaths) return this.contextPaths;
 
-        var inherited = this.context.paveContextPaths;
+        var inherited = context.paveContextPaths;
         var created = {};
         for (var key in createContextPaths) {
           var _createContextPaths$k = createContextPaths[key],
@@ -135,9 +146,9 @@ var createComponent = exports.createComponent = function createComponent(Compone
     }, {
       key: 'getArgs',
       value: function getArgs() {
-        var context = this.context,
-            params = this.params,
-            props = this.props,
+        var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.props;
+        var context = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.context;
+        var params = this.params,
             _sub = this.sub;
         _sub = _sub === undefined ? {} : _sub;
         var _sub$error = _sub.error,
@@ -145,23 +156,23 @@ var createComponent = exports.createComponent = function createComponent(Compone
             _sub$isLoading = _sub.isLoading,
             isLoading = _sub$isLoading === undefined ? false : _sub$isLoading;
 
-        var contextPaths = this.getContextPaths();
-        var store = this.getStore();
+        var contextPaths = this.getContextPaths(context);
+        var store = this.getStore(props, context);
         return { context: context, contextPaths: contextPaths, error: error, isLoading: isLoading, params: params, props: props, store: store };
       }
     }, {
       key: 'getCache',
-      value: function getCache() {
-        return _getCache(this.getArgs());
+      value: function getCache(props, context) {
+        return _getCache(this.getArgs(props, context));
       }
     }, {
       key: 'getQuery',
-      value: function getQuery() {
-        return _getQuery(this.getArgs());
+      value: function getQuery(props, context) {
+        return _getQuery(this.getArgs(props, context));
       }
     }, {
       key: 'getPave',
-      value: function getPave() {
+      value: function getPave(props, context) {
         var params = this.params,
             sub = this.sub,
             _sub2 = this.sub,
@@ -169,26 +180,26 @@ var createComponent = exports.createComponent = function createComponent(Compone
             isLoading = _sub2.isLoading;
 
         return {
-          cache: this.getCache(),
-          contextPaths: this.getContextPaths(),
+          cache: this.getCache(props, context),
+          contextPaths: this.getContextPaths(context),
           error: error,
           isLoading: isLoading,
           params: params,
           reload: sub.reload.bind(sub),
           run: sub.run.bind(sub),
           setParams: this.setParams.bind(this),
-          store: this.getStore()
+          store: this.getStore(props, context)
         };
       }
     }, {
       key: 'updatePave',
-      value: function updatePave() {
-        this.setState({ pave: this.getPave() });
+      value: function updatePave(props, context) {
+        this.setState({ pave: this.getPave(props, context) });
       }
     }, {
       key: 'setParams',
       value: function setParams(params) {
-        this.params = _extends({}, this.params, { params: params });
+        this.params = _extends({}, this.params, params);
         this.sub.setQuery(this.getQuery());
       }
     }, {
@@ -200,10 +211,10 @@ var createComponent = exports.createComponent = function createComponent(Compone
 
     return _class;
   }(_react.Component), _class.static = Component, _class.childContextTypes = {
-    paveStore: _react.PropTypes.instanceOf(_pave.Store),
-    paveContextPaths: _react.PropTypes.object
-  }, _class.contextTypes = {
-    paveStore: _react.PropTypes.instanceOf(_pave.Store),
-    paveContextPaths: _react.PropTypes.object
-  }, _temp2;
+    paveContextPaths: _react.PropTypes.object,
+    paveStore: _react.PropTypes.instanceOf(_pave.Store)
+  }, _class.contextTypes = _extends({}, Component.childContextTypes, {
+    paveContextPaths: _react.PropTypes.object,
+    paveStore: _react.PropTypes.instanceOf(_pave.Store)
+  }), _temp2;
 };
