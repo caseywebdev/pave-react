@@ -42,8 +42,7 @@ export const createComponent = (Component, {
       this.sub = new PaveSubscription({
         onChange: sub => {
           this.sub = sub;
-          this.updatePave();
-          sub.setQuery(this.getQuery());
+          this.update();
         },
         query: this.getQuery(),
         store: this.getStore()
@@ -51,8 +50,7 @@ export const createComponent = (Component, {
     }
 
     componentWillReceiveProps(props, context) {
-      this.updatePave(props, context);
-      this.sub.setQuery(this.getQuery(props, context));
+      this.update(props, context);
     }
 
     componentWillUnmount() {
@@ -123,13 +121,14 @@ export const createComponent = (Component, {
       };
     }
 
-    updatePave(props, context) {
+    update(props, context) {
       this.setState({pave: this.getPave(props, context)});
+      this.sub.setQuery(this.getQuery(props, context));
     }
 
     setParams(params) {
       this.params = {...this.params, ...params};
-      this.sub.setQuery(this.getQuery());
+      this.update();
     }
 
     render() {

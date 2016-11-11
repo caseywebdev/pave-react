@@ -77,8 +77,7 @@ var createComponent = exports.createComponent = function createComponent(Compone
         this.sub = new _paveSubscription2.default({
           onChange: function onChange(sub) {
             _this2.sub = sub;
-            _this2.updatePave();
-            sub.setQuery(_this2.getQuery());
+            _this2.update();
           },
           query: this.getQuery(),
           store: this.getStore()
@@ -87,8 +86,7 @@ var createComponent = exports.createComponent = function createComponent(Compone
     }, {
       key: 'componentWillReceiveProps',
       value: function componentWillReceiveProps(props, context) {
-        this.updatePave(props, context);
-        this.sub.setQuery(this.getQuery(props, context));
+        this.update(props, context);
       }
     }, {
       key: 'componentWillUnmount',
@@ -192,15 +190,16 @@ var createComponent = exports.createComponent = function createComponent(Compone
         };
       }
     }, {
-      key: 'updatePave',
-      value: function updatePave(props, context) {
+      key: 'update',
+      value: function update(props, context) {
         this.setState({ pave: this.getPave(props, context) });
+        this.sub.setQuery(this.getQuery(props, context));
       }
     }, {
       key: 'setParams',
       value: function setParams(params) {
         this.params = _extends({}, this.params, params);
-        this.sub.setQuery(this.getQuery());
+        this.update();
       }
     }, {
       key: 'render',
