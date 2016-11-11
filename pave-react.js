@@ -137,11 +137,17 @@ var createComponent = exports.createComponent = function createComponent(Compone
       value: function getArgs() {
         var context = this.context,
             params = this.params,
-            props = this.props;
+            props = this.props,
+            _sub = this.sub;
+        _sub = _sub === undefined ? {} : _sub;
+        var _sub$error = _sub.error,
+            error = _sub$error === undefined ? null : _sub$error,
+            _sub$isLoading = _sub.isLoading,
+            isLoading = _sub$isLoading === undefined ? false : _sub$isLoading;
 
         var contextPaths = this.getContextPaths();
         var store = this.getStore();
-        return { context: context, contextPaths: contextPaths, params: params, props: props, store: store };
+        return { context: context, contextPaths: contextPaths, error: error, isLoading: isLoading, params: params, props: props, store: store };
       }
     }, {
       key: 'getCache',
@@ -158,9 +164,9 @@ var createComponent = exports.createComponent = function createComponent(Compone
       value: function getPave() {
         var params = this.params,
             sub = this.sub,
-            _sub = this.sub,
-            error = _sub.error,
-            isLoading = _sub.isLoading;
+            _sub2 = this.sub,
+            error = _sub2.error,
+            isLoading = _sub2.isLoading;
 
         return {
           cache: this.getCache(),

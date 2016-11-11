@@ -84,10 +84,15 @@ export const createComponent = (Component, {
     }
 
     getArgs() {
-      const {context, params, props} = this;
+      const {
+        context,
+        params,
+        props,
+        sub: {error = null, isLoading = false} = {}
+      } = this;
       const contextPaths = this.getContextPaths();
       const store = this.getStore();
-      return {context, contextPaths, params, props, store};
+      return {context, contextPaths, error, isLoading, params, props, store};
     }
 
     getCache() {
