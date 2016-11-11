@@ -20,10 +20,14 @@ export const createComponent = (Component, {
     };
 
     static contextTypes = {
-      ...Component.childContextTypes,
+      ...Component.contextTypes,
       paveContextPaths: PropTypes.object,
       paveStore: PropTypes.instanceOf(Store)
     };
+
+    static propTypes = Component.propTypes;
+
+    static defaultProps = Component.defaultProps;
 
     getChildContext() {
       return {

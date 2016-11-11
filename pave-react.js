@@ -213,8 +213,8 @@ var createComponent = exports.createComponent = function createComponent(Compone
   }(_react.Component), _class.static = Component, _class.childContextTypes = {
     paveContextPaths: _react.PropTypes.object,
     paveStore: _react.PropTypes.instanceOf(_pave.Store)
-  }, _class.contextTypes = _extends({}, Component.childContextTypes, {
+  }, _class.contextTypes = _extends({}, Component.contextTypes, {
     paveContextPaths: _react.PropTypes.object,
     paveStore: _react.PropTypes.instanceOf(_pave.Store)
-  }), _temp2;
+  }), _class.propTypes = Component.propTypes, _class.defaultProps = Component.defaultProps, _temp2;
 };
