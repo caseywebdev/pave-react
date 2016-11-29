@@ -58,7 +58,7 @@ var createComponent = exports.createComponent = function createComponent(Compone
         args[_key] = arguments[_key];
       }
 
-      return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref2 = _class.__proto__ || Object.getPrototypeOf(_class)).call.apply(_ref2, [this].concat(args))), _this), _this.params = params, _temp), _possibleConstructorReturn(_this, _ret);
+      return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref2 = _class.__proto__ || Object.getPrototypeOf(_class)).call.apply(_ref2, [this].concat(args))), _this), _this._isMounted = true, _this.params = params, _temp), _possibleConstructorReturn(_this, _ret);
     }
 
     _createClass(_class, [{
@@ -91,6 +91,7 @@ var createComponent = exports.createComponent = function createComponent(Compone
     }, {
       key: 'componentWillUnmount',
       value: function componentWillUnmount() {
+        this._isMounted = false;
         this.sub.destroy();
         this.unsetCreatedContextPaths();
       }
@@ -192,6 +193,8 @@ var createComponent = exports.createComponent = function createComponent(Compone
     }, {
       key: 'update',
       value: function update(props, context) {
+        if (!this._isMounted) return;
+
         this.setState({ pave: this.getPave(props, context) });
         this.sub.setQuery(this.getQuery(props, context));
       }

@@ -29,6 +29,8 @@ export const createComponent = (Component, {
 
     static defaultProps = Component.defaultProps;
 
+    _isMounted = true;
+
     getChildContext() {
       return {
         paveContextPaths: this.getContextPaths(),
@@ -54,6 +56,7 @@ export const createComponent = (Component, {
     }
 
     componentWillUnmount() {
+      this._isMounted = false;
       this.sub.destroy();
       this.unsetCreatedContextPaths();
     }
@@ -122,6 +125,8 @@ export const createComponent = (Component, {
     }
 
     update(props, context) {
+      if (!this._isMounted) return;
+
       this.setState({pave: this.getPave(props, context)});
       this.sub.setQuery(this.getQuery(props, context));
     }
