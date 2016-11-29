@@ -38,6 +38,8 @@ export const createComponent = (Component, {
 
     params = params;
 
+    isMounted = true;
+
     componentWillMount() {
       this.sub = new PaveSubscription({
         onChange: sub => {
@@ -54,6 +56,7 @@ export const createComponent = (Component, {
     }
 
     componentWillUnmount() {
+      this.isMounted = false;
       this.sub.destroy();
       this.unsetCreatedContextPaths();
     }
@@ -122,6 +125,8 @@ export const createComponent = (Component, {
     }
 
     update(props, context) {
+      if (!this.isMounted) return;
+
       this.setState({pave: this.getPave(props, context)});
       this.sub.setQuery(this.getQuery(props, context));
     }
