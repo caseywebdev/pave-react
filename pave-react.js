@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.createComponent = undefined;
+exports.withPave = undefined;
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
@@ -29,7 +29,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 var contextId = 0;
 
-var createComponent = exports.createComponent = function createComponent(Component, _ref) {
+var withPave = exports.withPave = function withPave(Component, _ref) {
   var _class, _temp2;
 
   var _ref$createContextPat = _ref.createContextPaths,

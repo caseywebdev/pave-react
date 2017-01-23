@@ -4,7 +4,7 @@ import React, {Component as ReactComponent, PropTypes} from 'react';
 
 let contextId = 0;
 
-export const createComponent = (Component, {
+export const withPave = (Component, {
   createContextPaths = {},
   getCache = () => ({}),
   getQuery = () => {},

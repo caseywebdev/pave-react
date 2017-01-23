@@ -1,6 +1,6 @@
 # PaveReact
 
-A React Component to help with common Pave patterns.
+A higher-order React component (HoC) to help with common Pave patterns.
 
 ## Install
 
@@ -12,10 +12,10 @@ npm install pave-react
 
 ```
 import {render} from 'react-dom';
-import PaveReact from 'pave-react';
+import {withPave} from 'pave-react';
 import store from './my-pave-store';
 
-const User = PaveReact.createComponent(
+const User = withPave(
   ({pave: {cache: {user}, isLoading}}) =>
     <div>
       {isLoading ? 'Loading...' : null}
