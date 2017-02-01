@@ -10,7 +10,7 @@ export const withPave = (Component, {
   getQuery = () => {},
   params = {},
   store
-}) =>
+} = {}) =>
   class extends ReactComponent {
     static static = Component;
 

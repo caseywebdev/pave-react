@@ -29,10 +29,11 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 var contextId = 0;
 
-var withPave = exports.withPave = function withPave(Component, _ref) {
+var withPave = exports.withPave = function withPave(Component) {
   var _class, _temp2;
 
-  var _ref$createContextPat = _ref.createContextPaths,
+  var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
+      _ref$createContextPat = _ref.createContextPaths,
       createContextPaths = _ref$createContextPat === undefined ? {} : _ref$createContextPat,
       _ref$getCache = _ref.getCache,
       _getCache = _ref$getCache === undefined ? function () {
