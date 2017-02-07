@@ -185,7 +185,6 @@ var withPave = exports.withPave = function withPave(Component) {
           isLoading: isLoading,
           params: params,
           reload: sub.reload.bind(sub),
-          run: sub.run.bind(sub),
           setParams: this.setParams.bind(this),
           store: this.getStore(props, context)
         };

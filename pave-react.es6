@@ -115,7 +115,6 @@ export const withPave = (Component, {
         isLoading,
         params,
         reload: ::sub.reload,
-        run: ::sub.run,
         setParams: ::this.setParams,
         store: this.getStore(props, context)
       };
