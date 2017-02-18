@@ -87,7 +87,9 @@ var withPave = exports.withPave = function withPave(Component) {
     }, {
       key: 'componentWillReceiveProps',
       value: function componentWillReceiveProps(props, context) {
-        this.update(props, context);
+        this.props = props;
+        this.context = context;
+        this.update();
       }
     }, {
       key: 'componentWillUnmount',
@@ -98,12 +100,9 @@ var withPave = exports.withPave = function withPave(Component) {
     }, {
       key: 'getStore',
       value: function getStore() {
-        var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.props;
-        var context = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.context;
-
         if (this.store) return this.store;
 
-        this.store = store || props.paveStore || context.paveStore;
+        this.store = store || this.props.paveStore || this.context.paveStore;
         if (!this.store) throw new Error('A Pave store is required');
 
         return this.store;
@@ -111,11 +110,9 @@ var withPave = exports.withPave = function withPave(Component) {
     }, {
       key: 'getContextPaths',
       value: function getContextPaths() {
-        var context = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.context;
-
         if (this.contextPaths) return this.contextPaths;
 
-        var inherited = context.paveContextPaths;
+        var inherited = this.context.paveContextPaths;
         var created = {};
         for (var key in createContextPaths) {
           var _createContextPaths$k = createContextPaths[key],
@@ -145,33 +142,33 @@ var withPave = exports.withPave = function withPave(Component) {
     }, {
       key: 'getArgs',
       value: function getArgs() {
-        var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.props;
-        var context = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.context;
-        var params = this.params,
-            _sub = this.sub;
-        _sub = _sub === undefined ? {} : _sub;
-        var _sub$error = _sub.error,
+        var context = this.context,
+            params = this.params,
+            props = this.props,
+            _sub = this.sub,
+            sub = _sub === undefined ? {} : _sub;
+        var _sub$error = sub.error,
             error = _sub$error === undefined ? null : _sub$error,
-            _sub$isLoading = _sub.isLoading,
+            _sub$isLoading = sub.isLoading,
             isLoading = _sub$isLoading === undefined ? false : _sub$isLoading;
 
-        var contextPaths = this.getContextPaths(context);
-        var store = this.getStore(props, context);
+        var contextPaths = this.getContextPaths();
+        var store = this.getStore();
         return { context: context, contextPaths: contextPaths, error: error, isLoading: isLoading, params: params, props: props, store: store };
       }
     }, {
       key: 'getCache',
-      value: function getCache(props, context) {
-        return _getCache(this.getArgs(props, context));
+      value: function getCache() {
+        return _getCache(this.getArgs());
       }
     }, {
       key: 'getQuery',
-      value: function getQuery(props, context) {
-        return _getQuery(this.getArgs(props, context));
+      value: function getQuery() {
+        return _getQuery(this.getArgs());
       }
     }, {
       key: 'getPave',
-      value: function getPave(props, context) {
+      value: function getPave() {
         var params = this.params,
             sub = this.sub,
             _sub2 = this.sub,
@@ -179,27 +176,27 @@ var withPave = exports.withPave = function withPave(Component) {
             isLoading = _sub2.isLoading;
 
         return {
-          cache: this.getCache(props, context),
-          contextPaths: this.getContextPaths(context),
+          cache: this.getCache(),
+          contextPaths: this.getContextPaths(),
           error: error,
           isLoading: isLoading,
           params: params,
           reload: sub.reload.bind(sub),
           setParams: this.setParams.bind(this),
-          store: this.getStore(props, context)
+          store: this.getStore()
         };
-      }
-    }, {
-      key: 'update',
-      value: function update(props, context) {
-        this.setState({ pave: this.getPave(props, context) });
-        this.sub.setQuery(this.getQuery(props, context));
       }
     }, {
       key: 'setParams',
       value: function setParams(params) {
         this.params = _extends({}, this.params, params);
         this.update();
+      }
+    }, {
+      key: 'update',
+      value: function update() {
+        this.sub.setQuery(this.getQuery());
+        this.setState({ pave: this.getPave() });
       }
     }, {
       key: 'render',

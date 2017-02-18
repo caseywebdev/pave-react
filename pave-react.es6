@@ -50,7 +50,9 @@ export const withPave = (Component, {
     }
 
     componentWillReceiveProps(props, context) {
-      this.update(props, context);
+      this.props = props;
+      this.context = context;
+      this.update();
     }
 
     componentWillUnmount() {
@@ -58,19 +60,19 @@ export const withPave = (Component, {
       this.unsetCreatedContextPaths();
     }
 
-    getStore(props = this.props, context = this.context) {
+    getStore() {
       if (this.store) return this.store;
 
-      this.store = store || props.paveStore || context.paveStore;
+      this.store = store || this.props.paveStore || this.context.paveStore;
       if (!this.store) throw new Error('A Pave store is required');
 
       return this.store;
     }
 
-    getContextPaths(context = this.context) {
+    getContextPaths() {
       if (this.contextPaths) return this.contextPaths;
 
-      const inherited = context.paveContextPaths;
+      const inherited = this.context.paveContextPaths;
       const created = {};
       for (let key in createContextPaths) {
         const {inherit = false, prefix = []} = createContextPaths[key];
@@ -91,43 +93,44 @@ export const withPave = (Component, {
       if (deltas.length) this.getStore().update(deltas);
     }
 
-    getArgs(props = this.props, context = this.context) {
-      const {params, sub: {error = null, isLoading = false} = {}} = this;
-      const contextPaths = this.getContextPaths(context);
-      const store = this.getStore(props, context);
+    getArgs() {
+      const {context, params, props, sub = {}} = this;
+      const {error = null, isLoading = false} = sub;
+      const contextPaths = this.getContextPaths();
+      const store = this.getStore();
       return {context, contextPaths, error, isLoading, params, props, store};
     }
 
-    getCache(props, context) {
-      return getCache(this.getArgs(props, context));
+    getCache() {
+      return getCache(this.getArgs());
     }
 
-    getQuery(props, context) {
-      return getQuery(this.getArgs(props, context));
+    getQuery() {
+      return getQuery(this.getArgs());
     }
 
-    getPave(props, context) {
+    getPave() {
       const {params, sub, sub: {error, isLoading}} = this;
       return {
-        cache: this.getCache(props, context),
-        contextPaths: this.getContextPaths(context),
+        cache: this.getCache(),
+        contextPaths: this.getContextPaths(),
         error,
         isLoading,
         params,
         reload: ::sub.reload,
         setParams: ::this.setParams,
-        store: this.getStore(props, context)
+        store: this.getStore()
       };
-    }
-
-    update(props, context) {
-      this.setState({pave: this.getPave(props, context)});
-      this.sub.setQuery(this.getQuery(props, context));
     }
 
     setParams(params) {
       this.params = {...this.params, ...params};
       this.update();
+    }
+
+    update() {
+      this.sub.setQuery(this.getQuery());
+      this.setState({pave: this.getPave()});
     }
 
     render() {
