@@ -133,11 +133,21 @@ var withPave = exports.withPave = function withPave(Component) {
     }, {
       key: 'unsetCreatedContextPaths',
       value: function unsetCreatedContextPaths() {
+        var _this3 = this;
+
         var paths = this.createdContextPaths;
         var deltas = [];
         for (var key in paths) {
           deltas.push((0, _pave.toDelta)(paths[key], { $unset: true }));
-        }if (deltas.length) this.getStore().update(deltas);
+        }if (deltas.length) {
+
+          // Since `componentWillUnmount` fires top down, child components must be
+          // given a tick to destroy their subscriptions to prevent unwanted
+          // `onChange` callbacks from firing.
+          setTimeout(function () {
+            return _this3.getStore().update(deltas);
+          });
+        }
       }
     }, {
       key: 'getArgs',

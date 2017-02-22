@@ -90,7 +90,13 @@ export const withPave = (Component, {
       const paths = this.createdContextPaths;
       const deltas = [];
       for (let key in paths) deltas.push(toDelta(paths[key], {$unset: true}));
-      if (deltas.length) this.getStore().update(deltas);
+      if (deltas.length) {
+
+        // Since `componentWillUnmount` fires top down, child components must be
+        // given a tick to destroy their subscriptions to prevent unwanted
+        // `onChange` callbacks from firing.
+        setTimeout(() => this.getStore().update(deltas));
+      }
     }
 
     getArgs() {
