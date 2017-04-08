@@ -1,6 +1,6 @@
 {
   "name": "pave-react",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "author": "Casey Foster <c@sey.me>",
   "license": "MIT",
   "main": "pave-react.js",
@@ -9,7 +9,8 @@
     "url": "https://github.com/caseywebdev/pave-react"
   },
   "dependencies": {
-    "pave-subscription": "0.3"
+    "pave-subscription": "0.3",
+    "prop-types": "15"
   },
   "devDependencies": {
     "babel-preset-es2015": "6",

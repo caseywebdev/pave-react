@@ -1,6 +1,7 @@
-import PaveSubscription from 'pave-subscription';
 import {Store, toDelta} from 'pave';
-import React, {Component as ReactComponent, PropTypes} from 'react';
+import PaveSubscription from 'pave-subscription';
+import PropTypes from 'prop-types';
+import React, {Component as ReactComponent} from 'react';
 
 let contextId = 0;
 

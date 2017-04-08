@@ -9,11 +9,15 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+var _pave = require('pave');
+
 var _paveSubscription = require('pave-subscription');
 
 var _paveSubscription2 = _interopRequireDefault(_paveSubscription);
 
-var _pave = require('pave');
+var _propTypes = require('prop-types');
+
+var _propTypes2 = _interopRequireDefault(_propTypes);
 
 var _react = require('react');
 
@@ -217,10 +221,10 @@ var withPave = exports.withPave = function withPave(Component) {
 
     return _class;
   }(_react.Component), _class.static = Component, _class.childContextTypes = {
-    paveContextPaths: _react.PropTypes.object,
-    paveStore: _react.PropTypes.instanceOf(_pave.Store)
+    paveContextPaths: _propTypes2.default.object,
+    paveStore: _propTypes2.default.instanceOf(_pave.Store)
   }, _class.contextTypes = _extends({}, Component.contextTypes, {
-    paveContextPaths: _react.PropTypes.object,
-    paveStore: _react.PropTypes.instanceOf(_pave.Store)
+    paveContextPaths: _propTypes2.default.object,
+    paveStore: _propTypes2.default.instanceOf(_pave.Store)
   }), _class.propTypes = Component.propTypes, _class.defaultProps = Component.defaultProps, _temp2;
 };
