@@ -1,3 +1,4 @@
+import 'setimmediate';
 import {Store, toDelta} from 'pave';
 import PaveSubscription from 'pave-subscription';
 import PropTypes from 'prop-types';
@@ -41,13 +42,12 @@ export const withPave = (Component, {
 
     componentWillMount() {
       this.sub = new PaveSubscription({
-        onChange: sub => {
-          this.sub = sub;
-          this.update();
-        },
+        onChange: this.update,
         query: this.getQuery(),
         store: this.getStore()
       });
+      this.reload = ::this.sub.reload;
+      this.update();
     }
 
     componentWillReceiveProps(props, context) {
@@ -96,16 +96,22 @@ export const withPave = (Component, {
         // Since `componentWillUnmount` fires top down, child components must be
         // given a tick to destroy their subscriptions to prevent unwanted
         // `onChange` callbacks from firing.
-        setTimeout(() => this.getStore().update(deltas));
+        setImmediate(() => this.getStore().update(deltas));
       }
     }
 
     getArgs() {
-      const {context, params, props, sub = {}} = this;
-      const {error = null, isLoading = false} = sub;
-      const contextPaths = this.getContextPaths();
-      const store = this.getStore();
-      return {context, contextPaths, error, isLoading, params, props, store};
+      return {
+        context: this.context,
+        contextPaths: this.getContextPaths(),
+        error: this.sub ? this.sub.error : null,
+        isLoading: this.sub ? this.sub.isLoading : false,
+        params: this.params,
+        props: this.props,
+        reload: this.reload,
+        setParams: this.setParams,
+        store: this.getStore()
+      };
     }
 
     getCache() {
@@ -117,25 +123,19 @@ export const withPave = (Component, {
     }
 
     getPave() {
-      const {params, sub, sub: {error, isLoading}} = this;
-      return {
-        cache: this.getCache(),
-        contextPaths: this.getContextPaths(),
-        error,
-        isLoading,
-        params,
-        reload: ::sub.reload,
-        setParams: ::this.setParams,
-        store: this.getStore()
-      };
+      const args = this.getArgs();
+      args.cache = this.getCache();
+      return args;
     }
 
-    setParams(params) {
+    setParams = params => {
       this.params = {...this.params, ...params};
       this.update();
     }
 
-    update() {
+    update = () => {
+      if (!this.sub) return;
+
       this.sub.setQuery(this.getQuery());
       this.setState({pave: this.getPave()});
     }

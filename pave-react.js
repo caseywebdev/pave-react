@@ -9,6 +9,8 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+require('setimmediate');
+
 var _pave = require('pave');
 
 var _paveSubscription = require('pave-subscription');
@@ -63,7 +65,15 @@ var withPave = exports.withPave = function withPave(Component) {
         args[_key] = arguments[_key];
       }
 
-      return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref2 = _class.__proto__ || Object.getPrototypeOf(_class)).call.apply(_ref2, [this].concat(args))), _this), _this.params = params, _temp), _possibleConstructorReturn(_this, _ret);
+      return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref2 = _class.__proto__ || Object.getPrototypeOf(_class)).call.apply(_ref2, [this].concat(args))), _this), _this.params = params, _this.setParams = function (params) {
+        _this.params = _extends({}, _this.params, params);
+        _this.update();
+      }, _this.update = function () {
+        if (!_this.sub) return;
+
+        _this.sub.setQuery(_this.getQuery());
+        _this.setState({ pave: _this.getPave() });
+      }, _temp), _possibleConstructorReturn(_this, _ret);
     }
 
     _createClass(_class, [{
@@ -77,16 +87,15 @@ var withPave = exports.withPave = function withPave(Component) {
     }, {
       key: 'componentWillMount',
       value: function componentWillMount() {
-        var _this2 = this;
+        var _context;
 
         this.sub = new _paveSubscription2.default({
-          onChange: function onChange(sub) {
-            _this2.sub = sub;
-            _this2.update();
-          },
+          onChange: this.update,
           query: this.getQuery(),
           store: this.getStore()
         });
+        this.reload = (_context = this.sub).reload.bind(_context);
+        this.update();
       }
     }, {
       key: 'componentWillReceiveProps',
@@ -137,7 +146,7 @@ var withPave = exports.withPave = function withPave(Component) {
     }, {
       key: 'unsetCreatedContextPaths',
       value: function unsetCreatedContextPaths() {
-        var _this3 = this;
+        var _this2 = this;
 
         var paths = this.createdContextPaths;
         var deltas = [];
@@ -148,27 +157,25 @@ var withPave = exports.withPave = function withPave(Component) {
           // Since `componentWillUnmount` fires top down, child components must be
           // given a tick to destroy their subscriptions to prevent unwanted
           // `onChange` callbacks from firing.
-          setTimeout(function () {
-            return _this3.getStore().update(deltas);
+          setImmediate(function () {
+            return _this2.getStore().update(deltas);
           });
         }
       }
     }, {
       key: 'getArgs',
       value: function getArgs() {
-        var context = this.context,
-            params = this.params,
-            props = this.props,
-            _sub = this.sub,
-            sub = _sub === undefined ? {} : _sub;
-        var _sub$error = sub.error,
-            error = _sub$error === undefined ? null : _sub$error,
-            _sub$isLoading = sub.isLoading,
-            isLoading = _sub$isLoading === undefined ? false : _sub$isLoading;
-
-        var contextPaths = this.getContextPaths();
-        var store = this.getStore();
-        return { context: context, contextPaths: contextPaths, error: error, isLoading: isLoading, params: params, props: props, store: store };
+        return {
+          context: this.context,
+          contextPaths: this.getContextPaths(),
+          error: this.sub ? this.sub.error : null,
+          isLoading: this.sub ? this.sub.isLoading : false,
+          params: this.params,
+          props: this.props,
+          reload: this.reload,
+          setParams: this.setParams,
+          store: this.getStore()
+        };
       }
     }, {
       key: 'getCache',
@@ -183,34 +190,9 @@ var withPave = exports.withPave = function withPave(Component) {
     }, {
       key: 'getPave',
       value: function getPave() {
-        var params = this.params,
-            sub = this.sub,
-            _sub2 = this.sub,
-            error = _sub2.error,
-            isLoading = _sub2.isLoading;
-
-        return {
-          cache: this.getCache(),
-          contextPaths: this.getContextPaths(),
-          error: error,
-          isLoading: isLoading,
-          params: params,
-          reload: sub.reload.bind(sub),
-          setParams: this.setParams.bind(this),
-          store: this.getStore()
-        };
-      }
-    }, {
-      key: 'setParams',
-      value: function setParams(params) {
-        this.params = _extends({}, this.params, params);
-        this.update();
-      }
-    }, {
-      key: 'update',
-      value: function update() {
-        this.sub.setQuery(this.getQuery());
-        this.setState({ pave: this.getPave() });
+        var args = this.getArgs();
+        args.cache = this.getCache();
+        return args;
       }
     }, {
       key: 'render',
