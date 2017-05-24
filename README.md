@@ -16,14 +16,14 @@ import {withPave} from 'pave-react';
 import store from './my-pave-store';
 
 const User = withPave(
-  ({pave: {cache: {user}, isLoading}}) =>
+  ({pave: {isLoading, state: {user}}}) =>
     <div>
       {isLoading ? 'Loading...' : null}
       {user ? `Hello ${user.name}!` : null}
     </div>,
   {
     getQuery: ({props: {userId}}) => ['usersById', userId],
-    getCache: ({props: {userId}, store}) => ({
+    getState: ({props: {userId}, store}) => ({
       user: store.get(['usersById', userId])
     })
   }

@@ -41,12 +41,12 @@ var withPave = exports.withPave = function withPave(Component) {
   var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
       _ref$createContextPat = _ref.createContextPaths,
       createContextPaths = _ref$createContextPat === undefined ? {} : _ref$createContextPat,
-      _ref$getCache = _ref.getCache,
-      _getCache = _ref$getCache === undefined ? function () {
-    return {};
-  } : _ref$getCache,
       _ref$getQuery = _ref.getQuery,
       _getQuery = _ref$getQuery === undefined ? function () {} : _ref$getQuery,
+      _ref$getState = _ref.getState,
+      _getState = _ref$getState === undefined ? function () {
+    return {};
+  } : _ref$getState,
       _ref$params = _ref.params,
       params = _ref$params === undefined ? {} : _ref$params,
       store = _ref.store;
@@ -178,20 +178,20 @@ var withPave = exports.withPave = function withPave(Component) {
         };
       }
     }, {
-      key: 'getCache',
-      value: function getCache() {
-        return _getCache(this.getArgs());
-      }
-    }, {
       key: 'getQuery',
       value: function getQuery() {
         return _getQuery(this.getArgs());
       }
     }, {
+      key: 'getState',
+      value: function getState() {
+        return _getState(this.getArgs());
+      }
+    }, {
       key: 'getPave',
       value: function getPave() {
         var args = this.getArgs();
-        args.cache = this.getCache();
+        args.state = this.getState();
         return args;
       }
     }, {

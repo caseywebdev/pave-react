@@ -8,8 +8,8 @@ let contextId = 0;
 
 export const withPave = (Component, {
   createContextPaths = {},
-  getCache = () => ({}),
   getQuery = () => {},
+  getState = () => ({}),
   params = {},
   store
 } = {}) =>
@@ -114,17 +114,17 @@ export const withPave = (Component, {
       };
     }
 
-    getCache() {
-      return getCache(this.getArgs());
-    }
-
     getQuery() {
       return getQuery(this.getArgs());
     }
 
+    getState() {
+      return getState(this.getArgs());
+    }
+
     getPave() {
       const args = this.getArgs();
-      args.cache = this.getCache();
+      args.state = this.getState();
       return args;
     }
 
