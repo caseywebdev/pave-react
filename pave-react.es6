@@ -132,8 +132,8 @@ export const withPave = (Component, {
       if (!this.sub) return;
 
       const pave = this.getPave();
-      this.sub.setQuery(pave.state.$query);
       this.setState({pave});
+      this.sub.setQuery(pave.state.$query);
     }
 
     render() {
