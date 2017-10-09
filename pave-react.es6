@@ -8,7 +8,6 @@ let contextId = 0;
 
 export const withPave = (Component, {
   createContextPaths = {},
-  getQuery = () => {},
   getState = () => ({}),
   params = {},
   store
@@ -43,7 +42,7 @@ export const withPave = (Component, {
     componentWillMount() {
       this.sub = new PaveSubscription({
         onChange: this.update,
-        query: this.getQuery(),
+        query: this.getState().$query,
         store: this.getStore()
       });
       this.reload = ::this.sub.reload;
@@ -114,17 +113,13 @@ export const withPave = (Component, {
       };
     }
 
-    getQuery() {
-      return getQuery(this.getArgs());
-    }
-
-    getState() {
-      return getState(this.getArgs());
+    getState(args = this.getArgs()) {
+      return getState(args);
     }
 
     getPave() {
       const args = this.getArgs();
-      args.state = this.getState();
+      args.state = this.getState(args);
       return args;
     }
 
@@ -136,8 +131,9 @@ export const withPave = (Component, {
     update = () => {
       if (!this.sub) return;
 
-      this.sub.setQuery(this.getQuery());
-      this.setState({pave: this.getPave()});
+      const pave = this.getPave();
+      this.sub.setQuery(pave.state.$query);
+      this.setState({pave});
     }
 
     render() {

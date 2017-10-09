@@ -22,8 +22,8 @@ const User = withPave(
       {user ? `Hello ${user.name}!` : null}
     </div>,
   {
-    getQuery: ({props: {userId}}) => ['usersById', userId],
     getState: ({props: {userId}, store}) => ({
+      $query: ['usersById', userId],
       user: store.get(['usersById', userId])
     })
   }
